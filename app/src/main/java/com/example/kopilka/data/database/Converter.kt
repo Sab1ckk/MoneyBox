@@ -1,4 +1,4 @@
-package com.example.kopilka.data.entity
+package com.example.kopilka.data.database
 import androidx.room3.DaoReturnTypeConverters
 import java.time.LocalDate
 
