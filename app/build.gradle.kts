@@ -43,6 +43,8 @@ android {
 
 dependencies {
     implementation(libs.hilt.android)
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.hilt.navigation.compose)
     ksp(libs.hilt.android.compiler)
     ksp(libs.androidx.room3.compiler)
     implementation(libs.androidx.core.ktx)
