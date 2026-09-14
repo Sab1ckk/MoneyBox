@@ -22,25 +22,11 @@ import com.example.kopilka.data.dao.BankDepositDao
     exportSchema = false
 )
 @TypeConverters(Converters::class)
-abstract class AppDatabase : RoomDatabase() {
+abstract class KopilkaDatabase : RoomDatabase() {
     abstract fun goalDao(): GoalDao
     abstract fun depositDao(): DepositDao
     abstract fun categoryDao(): CategoryDao
     abstract fun goalCategoryDao(): GoalCategoryDao
     abstract fun bankDepositDao(): BankDepositDao
 
-    companion object {
-        @Volatile private var INSTANCE: AppDatabase? = null
-
-        fun getInstance(context: Context): AppDatabase =
-            INSTANCE ?: synchronized(this) {
-                INSTANCE ?: Room.databaseBuilder(
-                    context.applicationContext,
-                    AppDatabase::class.java,
-                    "kopilka_db"
-                )
-                    .fallbackToDestructiveMigration() // на этапе разработки, до релиза миграции не нужны
-                    .build().also { INSTANCE = it }
-            }
-    }
 }

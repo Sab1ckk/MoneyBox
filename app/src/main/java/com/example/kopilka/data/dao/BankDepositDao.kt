@@ -15,7 +15,6 @@ interface BankDepositDao {
 
     @Insert
     suspend fun insert(bankDeposit: BankDeposit)
-
     @Update
     suspend fun update(bankDeposit: BankDeposit)
 
