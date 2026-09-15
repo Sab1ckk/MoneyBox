@@ -1,8 +1,8 @@
 package com.example.kopilka.data.entity
-import androidx.room3.Entity
-import androidx.room3.PrimaryKey
-import androidx.room3.ForeignKey
-import androidx.room3.Index
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+import androidx.room.ForeignKey
+import androidx.room.Index
 import java.time.LocalDate
 
 

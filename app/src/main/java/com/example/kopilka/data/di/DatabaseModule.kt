@@ -1,7 +1,7 @@
 package com.example.kopilka.data.di
 
 import android.content.Context
-import androidx.room3.Room
+import androidx.room.Room
 import com.example.kopilka.data.dao.BankDepositDao
 import com.example.kopilka.data.dao.CategoryDao
 import com.example.kopilka.data.dao.DepositDao
@@ -72,10 +72,4 @@ object DatabaseModule {
 
 }
 
-private fun ERROR.build(): KopilkaDatabase {
-    TODO("Not yet implemented")
-}
 
-interface ERROR {
-
-}

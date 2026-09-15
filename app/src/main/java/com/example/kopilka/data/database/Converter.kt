@@ -1,10 +1,10 @@
 package com.example.kopilka.data.database
-import androidx.room3.DaoReturnTypeConverters
+import androidx.room.TypeConverter
 import java.time.LocalDate
 
 class Converters {
-    @DaoReturnTypeConverters
+    @TypeConverter
     fun fromEpochDay(value: Long?): LocalDate? = value?.let { LocalDate.ofEpochDay(it) }
-    @DaoReturnTypeConverters
+    @TypeConverter
     fun toEpochDay(date: LocalDate?): Long? = date?.toEpochDay()
 }

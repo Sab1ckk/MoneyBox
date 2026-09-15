@@ -1,9 +1,9 @@
 package com.example.kopilka.data.dao
 
-import androidx.room3.Dao
-import androidx.room3.Query
-import androidx.room3.Insert
-import androidx.room3.Delete
+import androidx.room.Dao
+import androidx.room.Query
+import androidx.room.Insert
+import androidx.room.Delete
 import com.example.kopilka.data.entity.Category
 import com.example.kopilka.data.entity.Goal
 import com.example.kopilka.data.entity.GoalCategory

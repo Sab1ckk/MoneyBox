@@ -1,10 +1,10 @@
 package com.example.kopilka.data.database
 
-import androidx.room3.Database
-import androidx.room3.Room
+import androidx.room.Database
+import androidx.room.Room
 import android.content.Context
 import androidx.room.TypeConverters
-import androidx.room3.RoomDatabase
+import androidx.room.RoomDatabase
 import com.example.kopilka.data.entity.Goal
 import com.example.kopilka.data.entity.GoalCategory
 import com.example.kopilka.data.entity.Category

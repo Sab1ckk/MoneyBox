@@ -1,6 +1,6 @@
 package com.example.kopilka.data.entity
-import androidx.room3.Entity
-import androidx.room3.PrimaryKey
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 import java.time.LocalDate
 
 @Entity(tableName = "goals")
