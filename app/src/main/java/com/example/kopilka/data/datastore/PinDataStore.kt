@@ -1,8 +1,3 @@
-// Путь в проекте: app/src/main/java/com/example/kopilka/data/datastore/PinDataStore.kt
-//
-// Требуемая зависимость (build.gradle.kts, модуль app):
-// implementation("androidx.datastore:datastore-preferences:1.1.1")
-
 package com.example.kopilka.data.datastore
 
 import android.content.Context

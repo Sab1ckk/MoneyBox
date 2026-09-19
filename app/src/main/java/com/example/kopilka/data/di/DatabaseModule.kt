@@ -8,11 +8,6 @@ import com.example.kopilka.data.dao.DepositDao
 import com.example.kopilka.data.dao.GoalCategoryDao
 import com.example.kopilka.data.dao.GoalDao
 import com.example.kopilka.data.database.KopilkaDatabase
-import com.example.kopilka.data.entity.BankDeposit
-import com.example.kopilka.data.entity.Category
-import com.example.kopilka.data.entity.Deposit
-import com.example.kopilka.data.entity.Goal
-import com.example.kopilka.data.entity.GoalCategory
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
