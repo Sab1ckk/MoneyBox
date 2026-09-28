@@ -44,6 +44,8 @@ android {
 dependencies {
     implementation(libs.androidx.core.ktx)
 
+    implementation(libs.androidx.work.runtime.ktx)
+
     implementation("androidx.compose.material:material-icons-core:1.7.5")
 
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -78,5 +80,6 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+
 
 }

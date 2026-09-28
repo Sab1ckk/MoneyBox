@@ -13,6 +13,9 @@ interface BankDepositDao {
     @Query("SELECT * FROM bank_deposits WHERE goalId = :goalId")
     fun getByGoalId(goalId: Int): Flow<BankDeposit?>
 
+    @Query("SELECT * FROM bank_deposits")
+    suspend fun getAllOnce(): List<BankDeposit>
+
     @Insert
     suspend fun insert(bankDeposit: BankDeposit)
     @Update
@@ -20,4 +23,7 @@ interface BankDepositDao {
 
     @Delete
     suspend fun delete(bankDeposit: BankDeposit)
+
+    @Query("DELETE FROM bank_deposits")
+    suspend fun deleteAll()
 }

@@ -1,4 +1,4 @@
-package com.example.kopilka.ui.screens.goal
+package com.example.kopilka.ui.screens.goals
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -33,6 +32,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -137,7 +137,7 @@ private fun GoalListContent(
                     focusedTextColor = ColorText,
                     unfocusedTextColor = ColorText
                 ),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp))
             )
 
             Spacer(Modifier.height(12.dp))
@@ -153,6 +153,7 @@ private fun GoalListContent(
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier
+                        .clip(RoundedCornerShape(100.dp))
                         .clickable { onToggleSortMenu() }
                         .background(ColorAccentDim, RoundedCornerShape(100.dp))
                         .padding(horizontal = 12.dp, vertical = 6.dp)
@@ -176,6 +177,7 @@ private fun GoalListContent(
                             fontWeight = FontWeight.SemiBold,
                             modifier = Modifier
                                 .weight(1f)
+                                .clip(RoundedCornerShape(10.dp))
                                 .clickable { onSortOptionChange(option) }
                                 .background(
                                     if (selected) ColorAccentDim else Color.Transparent,
@@ -200,6 +202,7 @@ private fun GoalListContent(
                         fontSize = 13.sp,
                         fontWeight = FontWeight.SemiBold,
                         modifier = Modifier
+                            .clip(RoundedCornerShape(100.dp))
                             .clickable { onStatusFilterChange(filter) }
                             .background(
                                 if (selected) ColorAccent else Color.Transparent,
@@ -241,6 +244,7 @@ private fun GoalCard(item: GoalListItemUi, onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .background(ColorCard, RoundedCornerShape(20.dp))
+            .clip(RoundedCornerShape(20.dp))
             .border(
                 1.dp,
                 if (item.isCompleted) ColorBorderAccent else ColorBorder,
@@ -358,14 +362,17 @@ private fun GoalCard(item: GoalListItemUi, onClick: () -> Unit) {
                 )
                 val daysLabel = when {
                     item.isCompleted -> "Завершено!"
+                    item.daysLeft == null -> "Нет прогноза"
                     item.daysLeft < 0 -> "Просрочено"
+                    item.isDeadlineEstimated -> "~${item.daysLeft} дн. (прогноз)"
                     else -> "${item.daysLeft} дн. осталось"
                 }
+                val isUrgent = item.daysLeft != null && item.daysLeft in 0..29 && !item.isCompleted
                 Text(
                     text = daysLabel,
-                    color = if (item.daysLeft in 0..29 && !item.isCompleted) ColorWarning else ColorText3,
+                    color = if (isUrgent) ColorWarning else ColorText3,
                     fontSize = 11.sp,
-                    fontWeight = if (item.daysLeft in 0..29 && !item.isCompleted) FontWeight.SemiBold else FontWeight.Normal
+                    fontWeight = if (isUrgent) FontWeight.SemiBold else FontWeight.Normal
                 )
             }
         }
@@ -378,16 +385,9 @@ private fun EmptyState(onCreate: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = 60.dp, bottom = 32.dp),
+        verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Box(
-            modifier = Modifier
-                .size(96.dp)
-                .background(ColorAccentDim, RoundedCornerShape(32.dp)),
-            contentAlignment = Alignment.Center
-        ) {
-            Text("＋", color = ColorAccent, fontSize = 36.sp)
-        }
         Spacer(Modifier.height(20.dp))
         Text("Пока нет целей", color = ColorText, fontSize = 18.sp, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(8.dp))
@@ -405,9 +405,10 @@ private fun EmptyState(onCreate: () -> Unit) {
             fontSize = 15.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier
+                .clip(RoundedCornerShape(16.dp))
                 .clickable { onCreate() }
                 .background(ColorAccent, RoundedCornerShape(16.dp))
-                .padding(horizontal = 28.dp, vertical = 14.dp)
+                .padding(horizontal = 28.dp, vertical = 12.dp)
         )
     }
 }

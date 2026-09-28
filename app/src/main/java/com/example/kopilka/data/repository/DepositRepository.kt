@@ -9,6 +9,8 @@ class DepositRepository@Inject constructor(
     private val depositDao: DepositDao
 ) {
     fun getDepositsForGoal(goalId: Int): Flow<List<Deposit>> = depositDao.getDepositsForGoal(goalId)
+    suspend fun getAllOnce(): List<Deposit> = depositDao.getAllOnce()
     suspend fun insert(deposit: Deposit) = depositDao.insert(deposit)
     suspend fun delete(deposit: Deposit) = depositDao.delete(deposit)
+    suspend fun deleteAll() = depositDao.deleteAll()
 }

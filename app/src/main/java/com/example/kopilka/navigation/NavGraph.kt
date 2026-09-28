@@ -1,3 +1,5 @@
+// Путь в проекте: app/src/main/java/com/example/kopilka/navigation/NavGraph.kt
+
 package com.example.kopilka.navigation
 
 import androidx.compose.foundation.layout.Box
@@ -11,19 +13,30 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.kopilka.ui.components.BottomNav
-import com.example.kopilka.ui.screens.goal.GoalListScreen
+import com.example.kopilka.ui.screens.goals.CreateGoalScreen
+import com.example.kopilka.ui.screens.goals.GoalDetailsScreen
+import com.example.kopilka.ui.screens.goals.GoalListScreen
 import com.example.kopilka.ui.screens.pin.PinScreen
+import com.example.kopilka.ui.screens.settings.SettingsScreen
+import com.example.kopilka.ui.screens.statistics.StatisticsScreen
 
 object Routes {
     const val PIN = "pin"
     const val GOALS = "goals"
     const val STATISTICS = "statistics"
     const val SETTINGS = "settings"
+    const val CREATE_GOAL = "createGoal?goalId={goalId}"
+    const val GOAL_DETAILS = "goalDetails/{goalId}"
+
+    fun createGoal(goalId: Int? = null) = "createGoal?goalId=${goalId ?: -1}"
+    fun goalDetails(goalId: Int) = "goalDetails/$goalId"
 }
 
 private val BOTTOM_NAV_ROUTES = setOf(Routes.GOALS, Routes.STATISTICS, Routes.SETTINGS)
@@ -42,8 +55,6 @@ fun NavGraph(navController: NavHostController = rememberNavController()) {
                     onTabSelected = { tab ->
                         if (tab.route != currentRoute) {
                             navController.navigate(tab.route) {
-                                // Стандартный паттерн переключения вкладок: не плодим
-                                // бэкстек, сохраняем/восстанавливаем состояние каждой вкладки.
                                 popUpTo(navController.graph.findStartDestination().id) {
                                     saveState = true
                                 }
@@ -74,24 +85,48 @@ fun NavGraph(navController: NavHostController = rememberNavController()) {
             composable(Routes.GOALS) {
                 GoalListScreen(
                     onGoalClick = { goalId ->
-                        // TODO: навигация на GoalDetailsScreen, когда экран будет готов
+                        navController.navigate(Routes.goalDetails(goalId))
                     },
                     onCreateGoal = {
-                        // TODO: навигация на CreateGoalScreen, когда экран будет готов
+                        navController.navigate(Routes.createGoal())
                     }
                 )
             }
 
+            composable(
+                route = Routes.CREATE_GOAL,
+                arguments = listOf(navArgument("goalId") {
+                    type = NavType.IntType
+                    defaultValue = -1
+                })
+            ) {
+                CreateGoalScreen(
+                    onBack = { navController.popBackStack() },
+                    onSaved = { navController.popBackStack() }
+                )
+            }
+
+            composable(
+                route = Routes.GOAL_DETAILS,
+                arguments = listOf(navArgument("goalId") { type = NavType.IntType })
+            ) {
+                GoalDetailsScreen(
+                    onBack = { navController.popBackStack() },
+                    onEdit = { goalId -> navController.navigate(Routes.createGoal(goalId)) }
+                )
+            }
+
             composable(Routes.STATISTICS) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Статистика — TODO")
-                }
+                StatisticsScreen()
             }
 
             composable(Routes.SETTINGS) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Настройки — TODO")
-                }
+                SettingsScreen(
+                    onChangePin = {
+                        navController.navigate(Routes.PIN)
+                    }
+                )
+
             }
         }
     }

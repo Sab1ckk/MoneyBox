@@ -9,7 +9,7 @@ data class Goal(
     val name: String,
     val description: String,
     val targetAmount: Double,
-    val deadline: LocalDate,
+    val deadline: LocalDate?,
     val createdDate: LocalDate,
     val isCompleted: Boolean = false
 )

@@ -4,6 +4,7 @@ package com.example.kopilka.utils
 
 import java.text.NumberFormat
 import java.time.LocalDate
+import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
@@ -30,4 +31,12 @@ fun daysUntil(date: LocalDate): Long {
 fun calcProgressPercent(saved: Double, target: Double): Int {
     if (target <= 0.0) return 0
     return ((saved / target) * 100).toInt().coerceIn(0, 100)
+}
+
+
+/** "Сен" / "Окт" — короткая подпись месяца для оси графика на экране статистики. */
+fun monthShortLabel(yearMonth: YearMonth): String {
+    val raw = yearMonth.month.getDisplayName(TextStyle.SHORT, RU_LOCALE)
+        .removeSuffix(".")
+    return raw.replaceFirstChar { it.uppercase() }
 }

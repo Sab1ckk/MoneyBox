@@ -1,3 +1,5 @@
+// Путь в проекте: app/src/main/java/com/example/kopilka/viewmodel/GoalListViewModel.kt
+
 package com.example.kopilka.viewmodel
 
 import androidx.lifecycle.ViewModel
@@ -7,6 +9,7 @@ import com.example.kopilka.data.repository.BankDepositRepository
 import com.example.kopilka.data.repository.DepositRepository
 import com.example.kopilka.data.repository.GoalCategoryRepository
 import com.example.kopilka.data.repository.GoalRepository
+import com.example.kopilka.utils.DeadlineForecast
 import com.example.kopilka.utils.calcProgressPercent
 import com.example.kopilka.utils.daysUntil
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -47,7 +50,10 @@ data class GoalListItemUi(
     val progressPercent: Int,
     val savedAmount: Double,
     val targetAmount: Double,
-    val daysLeft: Long
+    /** null — дедлайн не задан и прогноз ещё нельзя построить (нет пополнений). */
+    val daysLeft: Long?,
+    /** true — пользователь задал дедлайн сам; false — дата рассчитана автоматически. */
+    val isDeadlineEstimated: Boolean
 )
 
 data class GoalListUiState(
@@ -87,6 +93,15 @@ class GoalListViewModel @Inject constructor(
         ) { deposits, categories, bankDeposit ->
             val saved = deposits.sumOf { it.amount }
             val primaryCategory = categories.firstOrNull()
+
+            // Дедлайн: если задан вручную — используем его. Если нет — считаем
+            // автоматический прогноз по темпу пополнений (см. DeadlineForecast).
+            val manualDeadline = goal.deadline
+            val effectiveDeadline = manualDeadline ?: run {
+                val forecast = DeadlineForecast.estimate(saved, goal.targetAmount, deposits, bankDeposit)
+                (forecast as? DeadlineForecast.Estimated)?.date
+            }
+
             GoalListItemUi(
                 id = goal.id,
                 name = goal.name,
@@ -99,7 +114,8 @@ class GoalListViewModel @Inject constructor(
                 progressPercent = calcProgressPercent(saved, goal.targetAmount),
                 savedAmount = saved,
                 targetAmount = goal.targetAmount,
-                daysLeft = daysUntil(goal.deadline)
+                daysLeft = effectiveDeadline?.let { daysUntil(it) },
+                isDeadlineEstimated = manualDeadline == null
             )
         }
 
@@ -128,7 +144,8 @@ class GoalListViewModel @Inject constructor(
         }
 
         val sorted = when (sort) {
-            SortOption.DEADLINE -> filtered.sortedBy { it.daysLeft }
+            // Цели без прогноза (daysLeft == null) уходят в конец списка.
+            SortOption.DEADLINE -> filtered.sortedBy { it.daysLeft ?: Long.MAX_VALUE }
             SortOption.PROGRESS -> filtered.sortedByDescending { it.progressPercent }
             SortOption.AMOUNT -> filtered.sortedByDescending { it.targetAmount }
         }

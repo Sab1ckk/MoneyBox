@@ -10,7 +10,9 @@ class GoalRepository @Inject constructor(
 ) {
     fun getAllGoals(): Flow<List<Goal>> = goalDao.getAllGoals()
     fun getGoalById(id: Int): Flow<Goal?> = goalDao.getGoalById(id)
+    suspend fun getAllOnce(): List<Goal> = goalDao.getAllOnce()
     suspend fun insert(goal: Goal): Long = goalDao.insert(goal)
     suspend fun update(goal: Goal) = goalDao.update(goal)
     suspend fun delete(goal: Goal) = goalDao.delete(goal)
+    suspend fun deleteAll() = goalDao.deleteAll()
 }

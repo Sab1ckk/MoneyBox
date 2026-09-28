@@ -26,6 +26,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -34,6 +35,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
@@ -70,7 +72,7 @@ fun PinScreen(
         onDigit = viewModel::onDigit,
         onBackspace = viewModel::onBackspace,
         onShakeConsumed = viewModel::consumeShake,
-        onForgotPin = viewModel::onForgotPin
+        //onForgotPin = viewModel::onForgotPin
     )
 }
 
@@ -80,7 +82,7 @@ private fun PinScreenContent(
     onDigit: (String) -> Unit,
     onBackspace: () -> Unit,
     onShakeConsumed: () -> Unit,
-    onForgotPin: () -> Unit
+    //onForgotPin: () -> Unit
 ) {
     if (state.phase == PinPhase.LOADING) {
         Box(
@@ -223,16 +225,16 @@ private fun PinScreenContent(
         }
 
         // Ссылка "Забыли PIN?" — только на экране разблокировки
-        Box(modifier = Modifier.height(20.dp)) {
-            if (state.phase == PinPhase.UNLOCK) {
-                Text(
-                    text = "Забыли PIN? Сбросить",
-                    color = ColorAccent,
-                    fontSize = 13.sp,
-                    modifier = Modifier.clickable { onForgotPin() }
-                )
-            }
-        }
+//        Box(modifier = Modifier.height(20.dp)) {
+//            if (state.phase == PinPhase.UNLOCK) {
+//                Text(
+//                    text = "Забыли PIN? Сбросить",
+//                    color = ColorAccent,
+//                    fontSize = 13.sp,
+//                    modifier = Modifier.clickable { onForgotPin() }.clip(RoundedCornerShape(20.dp))
+//                )
+//            }
+//        }
     }
 }
 
@@ -248,7 +250,10 @@ private fun PinKey(label: String, enabled: Boolean, onClick: () -> Unit) {
                 if (!isEmpty && !isBackspace)
                     Modifier
                         .background(ColorSurface, RoundedCornerShape(20.dp))
+                        .clip(RoundedCornerShape(20.dp))
                         .border(1.dp, Color.White.copy(alpha = 0.06f), RoundedCornerShape(20.dp))
+                else if (isBackspace)
+                    Modifier.clip(RoundedCornerShape(20.dp))
                 else Modifier
             )
             .then(

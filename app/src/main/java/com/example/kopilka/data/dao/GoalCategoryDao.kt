@@ -25,6 +25,9 @@ interface GoalCategoryDao {
     """)
     fun getGoalsForCategory(categoryId: Int): Flow<List<Goal>>
 
+    @Query("SELECT * FROM goal_categories")
+    suspend fun getAllOnce(): List<GoalCategory>
+
     @Insert
     suspend fun insert(goalCategory: GoalCategory)
 
@@ -33,4 +36,7 @@ interface GoalCategoryDao {
 
     @Query("DELETE FROM goal_categories WHERE goalId = :goalId")
     suspend fun deleteAllForGoal(goalId: Int)
+
+    @Query("DELETE FROM goal_categories")
+    suspend fun deleteAll()
 }

@@ -12,9 +12,15 @@ interface DepositDao {
     @Query("SELECT * FROM deposits WHERE goalId = :goalId ORDER BY date DESC")
     fun getDepositsForGoal(goalId: Int): Flow<List<Deposit>>
 
+    @Query("SELECT * FROM deposits")
+    suspend fun getAllOnce(): List<Deposit>
+
     @Insert
     suspend fun insert(deposit: Deposit)
 
     @Delete
     suspend fun delete(deposit: Deposit)
+
+    @Query("DELETE FROM deposits")
+    suspend fun deleteAll()
 }

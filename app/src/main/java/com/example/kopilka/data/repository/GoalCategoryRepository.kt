@@ -12,7 +12,10 @@ class GoalCategoryRepository@Inject constructor(
 ) {
     fun getCategoriesForGoal(goalId: Int): Flow<List<Category>> = goalCategoryDao.getCategoriesForGoal(goalId)
     fun getGoalsForCategory(categoryId: Int): Flow<List<Goal>> = goalCategoryDao.getGoalsForCategory(categoryId)
+    suspend fun getAllOnce(): List<GoalCategory> = goalCategoryDao.getAllOnce()
+
     suspend fun insert(goalCategory: GoalCategory) = goalCategoryDao.insert(goalCategory)
     suspend fun delete(goalCategory: GoalCategory) = goalCategoryDao.delete(goalCategory)
     suspend fun deleteAllForGoal(goalId: Int) = goalCategoryDao.deleteAllForGoal(goalId)
+    suspend fun deleteAll() = goalCategoryDao.deleteAll()
 }
