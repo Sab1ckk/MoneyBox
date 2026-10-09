@@ -6,6 +6,7 @@ import com.example.kopilka.utils.CsvBackupManager
 import com.example.kopilka.data.datastore.DefaultSortSetting
 import com.example.kopilka.data.datastore.PinDataStore
 import com.example.kopilka.data.datastore.SettingsDataStore
+import com.example.kopilka.data.datastore.ThemeModeSetting
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -33,7 +34,8 @@ data class SettingsUiState(
     val weeklyReport: Boolean = false,
     val biometric: Boolean = false,
     val defaultSort: DefaultSortSetting = DefaultSortSetting.DEADLINE,
-    val currency: CurrencyOption = CurrencyOption.RUB
+    val currency: CurrencyOption = CurrencyOption.RUB,
+    val themeMode: ThemeModeSetting = ThemeModeSetting.DARK
 )
 
 @HiltViewModel
@@ -55,17 +57,21 @@ class SettingsViewModel @Inject constructor(
     val uiState: StateFlow<SettingsUiState> = combine(
         togglesFlow,
         settingsDataStore.defaultSort,
-        settingsDataStore.currencySymbol
-    ) { toggles, sort, currency ->
+        settingsDataStore.currencySymbol,
+        settingsDataStore.themeMode
+    ) { toggles, sort, currency, theme ->
         SettingsUiState(
             notifications = toggles[0],
             deadlineAlerts = toggles[1],
-            weeklyReport = toggles[2],
+            //weeklyReport = toggles[2],
             biometric = toggles[3],
             defaultSort = sort,
-            currency = CurrencyOption.fromSymbol(currency)
+            currency = CurrencyOption.fromSymbol(currency),
+            themeMode = theme
         )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SettingsUiState())
+    }.stateIn(viewModelScope,
+        SharingStarted.WhileSubscribed(5000),
+        SettingsUiState())
 
     fun setNotifications(value: Boolean) {
         viewModelScope.launch { settingsDataStore.setNotificationsEnabled(value) }
@@ -89,6 +95,10 @@ class SettingsViewModel @Inject constructor(
 
     fun setCurrency(value: CurrencyOption) {
         viewModelScope.launch { settingsDataStore.setCurrencySymbol(value.symbol) }
+    }
+
+    fun setThemeMode(value: ThemeModeSetting) {
+        viewModelScope.launch { settingsDataStore.setThemeMode(value) }
     }
 
     /** Сбрасывает сохранённый PIN — после этого экран PIN снова покажет создание кода. */

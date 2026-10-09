@@ -1,11 +1,12 @@
 // Путь в проекте: app/src/main/java/com/example/kopilka/ui/screens/pin/PinScreen.kt
-//
-// Требуемая зависимость (build.gradle.kts, модуль app):
-// implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 
 package com.example.kopilka.ui.screens.pin
 
+import androidx.compose.foundation.Image
 import androidx.compose.animation.core.Animatable
+import com.example.kopilka.R
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -38,10 +39,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.activity.compose.LocalActivity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.fragment.app.FragmentActivity
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.kopilka.ui.theme.ColorAccent
 import com.example.kopilka.ui.theme.ColorAccentDim
@@ -54,7 +58,10 @@ import com.example.kopilka.ui.theme.ColorText3
 import com.example.kopilka.viewmodel.PinPhase
 import com.example.kopilka.viewmodel.PinUiState
 import com.example.kopilka.viewmodel.PinViewModel
+import com.example.kopilka.utils.BiometricAuthResult
+import com.example.kopilka.utils.BiometricAuthenticator
 import kotlinx.coroutines.launch
+
 
 @Composable
 fun PinScreen(
@@ -62,6 +69,7 @@ fun PinScreen(
     viewModel: PinViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
+    val activity = LocalActivity.current as? FragmentActivity
 
     LaunchedEffect(state.isUnlocked) {
         if (state.isUnlocked) onUnlocked()
@@ -72,6 +80,21 @@ fun PinScreen(
         onDigit = viewModel::onDigit,
         onBackspace = viewModel::onBackspace,
         onShakeConsumed = viewModel::consumeShake,
+        onBiometricClick = {
+            activity?.let { act ->
+                BiometricAuthenticator.authenticate(
+                    activity = act,
+                    onResult = { result ->
+                        when (result) {
+                            is BiometricAuthResult.Success -> viewModel.onBiometricSuccess()
+                            is BiometricAuthResult.Error -> viewModel.onBiometricError(result.message)
+                            BiometricAuthResult.Cancelled -> Unit // пользователь сам выбрал PIN — ничего не делаем
+                        }
+                    }
+                )
+            }
+        }
+
         //onForgotPin = viewModel::onForgotPin
     )
 }
@@ -82,6 +105,8 @@ private fun PinScreenContent(
     onDigit: (String) -> Unit,
     onBackspace: () -> Unit,
     onShakeConsumed: () -> Unit,
+    onBiometricClick: () -> Unit
+
     //onForgotPin: () -> Unit
 ) {
     if (state.phase == PinPhase.LOADING) {
@@ -201,7 +226,7 @@ private fun PinScreenContent(
         }
 
         // Клавиатура 3x4
-        val keys = listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "⌫")
+        val keys = listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", "BIO", "0", "⌫")
         LazyVerticalGrid(
             columns = GridCells.Fixed(3),
             modifier = Modifier.widthIn(max = 264.dp),
@@ -210,19 +235,31 @@ private fun PinScreenContent(
             userScrollEnabled = false
         ) {
             items(keys) { key ->
-                PinKey(
-                    label = key,
-                    enabled = !state.isLockedOut,
-                    onClick = {
-                        when (key) {
-                            "" -> Unit
-                            "⌫" -> onBackspace()
-                            else -> onDigit(key)
-                        }
+                if (key == "BIO") {
+                    val showBiometric = state.biometricAvailable &&
+                            state.phase == PinPhase.UNLOCK &&
+                            !state.isLockedOut
+                    if (showBiometric) {
+                        BiometricKey(onClick = onBiometricClick)
+                    } else {
+                        // Сохраняем размер ячейки, чтобы сетка не "прыгала"
+                        Box(modifier = Modifier.aspectRatio(1.15f))
                     }
-                )
+                } else {
+                    PinKey(
+                        label = key,
+                        enabled = !state.isLockedOut,
+                        onClick = {
+                            when (key) {
+                                "" -> Unit
+                                "⌫" -> onBackspace()
+                                else -> onDigit(key)
+                            }
+                        }
+                    )
+                }
+
             }
-        }
 
         // Ссылка "Забыли PIN?" — только на экране разблокировки
 //        Box(modifier = Modifier.height(20.dp)) {
@@ -235,6 +272,7 @@ private fun PinScreenContent(
 //                )
 //            }
 //        }
+        }
     }
 }
 
@@ -271,3 +309,25 @@ private fun PinKey(label: String, enabled: Boolean, onClick: () -> Unit) {
         }
     }
 }
+
+/** Кнопка "Войти по отпечатку" — визуально оформлена как обычная клавиша клавиатуры. */
+@Composable
+private fun BiometricKey(onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .aspectRatio(1.15f)
+            .background(ColorSurface, RoundedCornerShape(20.dp))
+            .clip(RoundedCornerShape(20.dp))
+            .border(1.dp, ColorBorderAccent, RoundedCornerShape(20.dp))
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Image(
+            painter = painterResource(R.drawable.fngerprint),
+            contentDescription = "Моя иконка",
+            modifier = Modifier.size(28.dp),
+            colorFilter = ColorFilter.tint(ColorAccent)
+        )
+    }
+}
+

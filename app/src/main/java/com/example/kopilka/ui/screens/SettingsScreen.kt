@@ -5,6 +5,7 @@ package com.example.kopilka.ui.screens.settings
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -19,6 +20,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -43,10 +45,17 @@ import com.example.kopilka.ui.theme.ColorText2
 import com.example.kopilka.ui.theme.ColorText3
 import com.example.kopilka.viewmodel.CurrencyOption
 import com.example.kopilka.viewmodel.SettingsViewModel
+import com.example.kopilka.data.datastore.ThemeModeSetting
+import com.example.kopilka.utils.BiometricAuthenticator
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.draw.scale
 
 @Composable
 fun SettingsScreen(
@@ -57,8 +66,11 @@ fun SettingsScreen(
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
+    val biometricAvailable = remember { BiometricAuthenticator.isAvailable(context) }
+
 
     var showSortPicker by remember { mutableStateOf(false) }
+    var showThemePicker by remember { mutableStateOf(false) }
     var showCurrencyPicker by remember { mutableStateOf(false) }
     var showChangePinDialog by remember { mutableStateOf(false) }
     var showClearDataDialog by remember { mutableStateOf(false) }
@@ -123,8 +135,8 @@ fun SettingsScreen(
                 SettingItem(
                     icon = "🎨",
                     label = "Тема",
-                    sub = "Тёмная (пока единственная)",
-                    trailingBadge = "Тёмная"
+                    sub = state.themeMode.label(),
+                    onClick = { showThemePicker = true }
                 )
             }
 
@@ -136,13 +148,13 @@ fun SettingsScreen(
                     sub = state.defaultSort.label(),
                     onClick = { showSortPicker = true }
                 )
-                Divider()
-                SettingItem(
-                    icon = "₽",
-                    label = "Валюта",
-                    sub = state.currency.label,
-                    onClick = { showCurrencyPicker = true }
-                )
+//                Divider()
+//                SettingItem(
+//                    icon = "₽",
+//                    label = "Валюта",
+//                    sub = state.currency.label,
+//                    onClick = { showCurrencyPicker = true }
+//                )
             }
 
             SectionHeader("Уведомления")
@@ -167,13 +179,13 @@ fun SettingsScreen(
                         sub = "За 30 дней до срока",
                         toggle = state.deadlineAlerts to viewModel::setDeadlineAlerts
                     )
-                    Divider()
-                    SettingItem(
-                        icon = "📊",
-                        label = "Еженедельный отчёт",
-                        sub = "Сводка по воскресеньям",
-                        toggle = state.weeklyReport to viewModel::setWeeklyReport
-                    )
+//                    Divider()
+//                    SettingItem(
+//                        icon = "📊",
+//                        label = "Еженедельный отчёт",
+//                        sub = "Сводка по воскресеньям",
+//                        toggle = state.weeklyReport to viewModel::setWeeklyReport
+//                    )
                 }
             }
 
@@ -185,13 +197,15 @@ fun SettingsScreen(
                     sub = "Обновить 4-значный код доступа",
                     onClick = { showChangePinDialog = true }
                 )
-                Divider()
-                SettingItem(
-                    icon = "👆",
-                    label = "Биометрическая разблокировка",
-                    sub = "Отпечаток пальца или Face ID",
-                    toggle = state.biometric to viewModel::setBiometric
-                )
+                if (biometricAvailable){
+                    Divider()
+                    SettingItem(
+                        icon = "👆",
+                        label = "Биометрическая разблокировка",
+                        sub = "Отпечаток пальца или Face ID",
+                        toggle = state.biometric to viewModel::setBiometric
+                    )
+                }
             }
 
             SectionHeader("Данные")
@@ -232,6 +246,16 @@ fun SettingsScreen(
             AboutBlock()
             Spacer(Modifier.height(24.dp))
         }
+    }
+
+    if (showThemePicker) {
+        PickerSheet(
+            title = "Тема",
+            options = ThemeModeSetting.entries.map { it to it.label() },
+            selected = state.themeMode,
+            onSelect = { viewModel.setThemeMode(it); showThemePicker = false },
+            onDismiss = { showThemePicker = false }
+        )
     }
 
     if (showSortPicker) {
@@ -294,6 +318,12 @@ private fun DefaultSortSetting.label(): String = when (this) {
     DefaultSortSetting.DEADLINE -> "Дедлайн"
     DefaultSortSetting.PROGRESS -> "Прогресс"
     DefaultSortSetting.AMOUNT -> "Сумма"
+}
+
+private fun ThemeModeSetting.label(): String = when (this) {
+    ThemeModeSetting.LIGHT -> "Светлая"
+    ThemeModeSetting.DARK -> "Тёмная"
+    ThemeModeSetting.SYSTEM -> "Как в системе"
 }
 
 @Composable
@@ -402,19 +432,65 @@ private fun SettingItem(
 
 @Composable
 private fun SettingsToggle(value: Boolean, onChange: (Boolean) -> Unit) {
+    val offset by animateDpAsState(
+        targetValue = if (value) 21.dp else 3.dp,
+        animationSpec = spring(
+            dampingRatio = 0.7f,
+            stiffness = 500f
+        ),
+        label = "ToggleOffset"
+    )
+
+    // Анимация цвета фона
+    val backgroundColor by animateColorAsState(
+        targetValue = if (value) ColorAccent else ColorSurface,
+        animationSpec = tween(durationMillis = 220),
+        label = "ToggleBackground"
+    )
+
+    // Анимация цвета границы
+    val borderColor by animateColorAsState(
+        targetValue = if (value) ColorAccent else ColorBorder,
+        animationSpec = tween(durationMillis = 220),
+        label = "ToggleBorder"
+    )
+
+    // Небольшой эффект увеличения бегунка
+    val scale by animateFloatAsState(
+        targetValue = if (value) 1.05f else 1f,
+        animationSpec = spring(
+            dampingRatio = 0.5f,
+            stiffness = 400f
+        ),
+        label = "ToggleScale"
+    )
+
     Box(
         modifier = Modifier
             .width(44.dp)
             .height(26.dp)
-            .background(if (value) ColorAccent else ColorSurface, RoundedCornerShape(100.dp))
-            .border(1.dp, if (value) ColorAccent else ColorBorder, RoundedCornerShape(100.dp))
-            .clickable { onChange(!value) }
+            .background(
+                color = backgroundColor,
+                shape = RoundedCornerShape(100.dp)
+            )
+            .border(
+                width = 1.dp,
+                color = borderColor,
+                shape = RoundedCornerShape(100.dp)
+            )
+            .clip(RoundedCornerShape(100.dp))
+            .clickable { onChange(!value) },
+        contentAlignment = Alignment.CenterStart
     ) {
         Box(
             modifier = Modifier
-                .padding(start = if (value) 21.dp else 3.dp, top = 3.dp)
+                .padding(start = offset)
                 .size(18.dp)
-                .background(if (value) ColorBase else ColorText3, RoundedCornerShape(50))
+                .scale(scale)
+                .background(
+                    color = if (value) ColorBase else ColorText3,
+                    shape = RoundedCornerShape(50)
+                )
         )
     }
 }

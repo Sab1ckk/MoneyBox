@@ -70,7 +70,7 @@ class CsvBackupManager @Inject constructor(
                 writer.appendLine(
                     listOf(
                         g.id, quote(g.name), quote(g.description), g.targetAmount,
-                        g.deadline?.toEpochDay(), g.createdDate.toEpochDay(), g.isCompleted
+                        g.deadline?.toEpochDay() ?: "", g.createdDate.toEpochDay(), g.isCompleted
                     ).joinToString(",")
                 )
             }
@@ -78,7 +78,7 @@ class CsvBackupManager @Inject constructor(
             writer.appendLine("# SECTION:CATEGORIES")
             writer.appendLine("id,name,icon")
             categories.forEach { c ->
-                writer.appendLine(listOf(c.id, quote(c.name), quote(c.icon)).joinToString(","))
+                writer.appendLine(listOf(c.id, quote(c.name), quote(c.icon), quote(c.color ?: "")).joinToString(","))
             }
 
             writer.appendLine("# SECTION:GOAL_CATEGORIES")
@@ -140,7 +140,7 @@ class CsvBackupManager @Inject constructor(
                         name = cols[1],
                         description = cols[2],
                         targetAmount = cols[3].toDouble(),
-                        deadline = LocalDate.ofEpochDay(cols[4].toLong()),
+                        deadline = cols[4].toLongOrNull()?.let { LocalDate.ofEpochDay(it) },
                         createdDate = LocalDate.ofEpochDay(cols[5].toLong()),
                         isCompleted = cols[6].toBoolean()
                     )
@@ -148,7 +148,7 @@ class CsvBackupManager @Inject constructor(
                         id = cols[0].toInt(),
                         name = cols[1],
                         icon = cols[2],
-                        color = "gray"
+                        color = cols.getOrNull(3)?.takeIf { it.isNotBlank() }
                     )
                     "GOAL_CATEGORIES" -> goalCategories += GoalCategory(
                         goalId = cols[0].toInt(),

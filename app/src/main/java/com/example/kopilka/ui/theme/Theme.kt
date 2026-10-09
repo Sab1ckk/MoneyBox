@@ -2,30 +2,57 @@
 
 package com.example.kopilka.ui.theme
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import com.example.kopilka.data.datastore.ThemeModeSetting
 
-private val KopilkaColorScheme = darkColorScheme(
-    background = ColorBase,
-    surface = ColorCard,
-    surfaceVariant = ColorSurface,
-    primary = ColorAccent,
-    onPrimary = ColorBase,
-    onBackground = ColorText,
-    onSurface = ColorText,
-    error = ColorError,
-    onError = ColorText
-)
+enum class ThemeMode { LIGHT, DARK, SYSTEM }
 
-/**
- * Единственная тема приложения — тёмная (см. Kopilka_Figma_Design_Prompt.md:
- * "Тема: тёмная (dark mode) как основная и единственная").
- */
+fun ThemeModeSetting.toThemeMode(): ThemeMode = when (this) {
+    ThemeModeSetting.LIGHT -> ThemeMode.LIGHT
+    ThemeModeSetting.DARK -> ThemeMode.DARK
+    ThemeModeSetting.SYSTEM -> ThemeMode.SYSTEM
+}
+
 @Composable
-fun KopilkaTheme(content: @Composable () -> Unit) {
-    MaterialTheme(
-        colorScheme = KopilkaColorScheme,
-        content = content
-    )
+fun KopilkaTheme(themeMode: ThemeMode = ThemeMode.DARK, content: @Composable () -> Unit) {
+    val darkTheme = when (themeMode) {
+        ThemeMode.DARK -> true
+        ThemeMode.LIGHT -> false
+        ThemeMode.SYSTEM -> isSystemInDarkTheme()
+    }
+    val palette = if (darkTheme) DarkKopilkaColors else LightKopilkaColors
+
+    CompositionLocalProvider(LocalKopilkaColors provides palette) {
+        val colorScheme = if (darkTheme) {
+            darkColorScheme(
+                background = palette.base,
+                surface = palette.card,
+                surfaceVariant = palette.surface,
+                primary = palette.accent,
+                onPrimary = palette.base,
+                onBackground = palette.text,
+                onSurface = palette.text,
+                error = palette.error,
+                onError = palette.text
+            )
+        } else {
+            lightColorScheme(
+                background = palette.base,
+                surface = palette.card,
+                surfaceVariant = palette.surface,
+                primary = palette.accent,
+                onPrimary = palette.base,
+                onBackground = palette.text,
+                onSurface = palette.text,
+                error = palette.error,
+                onError = palette.text
+            )
+        }
+        MaterialTheme(colorScheme = colorScheme, content = content)
+    }
 }

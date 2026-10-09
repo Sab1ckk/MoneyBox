@@ -1,9 +1,13 @@
 package com.example.kopilka.viewmodel
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.kopilka.data.datastore.PinDataStore
+import com.example.kopilka.data.datastore.SettingsDataStore
+import com.example.kopilka.utils.BiometricAuthenticator
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,12 +26,15 @@ data class PinUiState(
     val shake: Boolean = false,
     val isLockedOut: Boolean = false,
     val lockRemainingSeconds: Int = 0,
-    val isUnlocked: Boolean = false
+    val isUnlocked: Boolean = false,
+    val biometricAvailable: Boolean = false
 )
 
 @HiltViewModel
 class PinViewModel @Inject constructor(
-    private val pinDataStore: PinDataStore
+    private val pinDataStore: PinDataStore,
+    private val settingsDataStore: SettingsDataStore,
+    @ApplicationContext private val appContext: Context
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PinUiState())
@@ -45,6 +52,14 @@ class PinViewModel @Inject constructor(
                 phase = if (pinAlreadyExists) PinPhase.UNLOCK else PinPhase.CREATE
             )
             resumeLockIfNeeded()
+        }
+
+        viewModelScope.launch {
+            settingsDataStore.biometricEnabled.collect { enabled ->
+                val available = enabled && BiometricAuthenticator.isAvailable(appContext)
+                _uiState.value = _uiState.value.copy(biometricAvailable = available)
+            }
+
         }
     }
 
@@ -79,6 +94,22 @@ class PinViewModel @Inject constructor(
             _uiState.value = PinUiState(phase = PinPhase.CREATE)
         }
     }
+
+    /** Вызывается после успешного системного диалога BiometricPrompt. */
+    fun onBiometricSuccess() {
+        // Биометрия — это только альтернативный вход на экране разблокировки.
+        // На CREATE/REENTER (первичная настройка PIN) кнопка и так скрыта,
+        // но проверка фазы здесь — дополнительная защита от гонок состояний.
+        if (_uiState.value.phase == PinPhase.UNLOCK && !_uiState.value.isLockedOut) {
+            _uiState.value = _uiState.value.copy(isUnlocked = true)
+        }
+    }
+
+    /** Системная ошибка биометрии (не "не распознано" — именно сбой). */
+    fun onBiometricError(message: String) {
+        _uiState.value = _uiState.value.copy(error = message)
+    }
+
 
     private suspend fun submit(enteredPin: String) {
         when (_uiState.value.phase) {

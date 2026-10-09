@@ -8,6 +8,7 @@ import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 import kotlin.math.ceil
 
+
 /**
  * Прогноз даты завершения цели, когда пользователь НЕ указал дедлайн вручную.
  *
@@ -55,6 +56,27 @@ sealed class DeadlineForecast {
             return total / monthsElapsed
         }
 
+        private fun simulate(
+            saved: Double,
+            monthly: Double,
+            deposit: BankDeposit,
+            months: Long
+        ): Double {
+            val capMonths = deposit.capitalizationMonths.coerceAtLeast(1)
+            val monthlyRate = deposit.interestRate / 100.0 / 12.0
+            var balance = saved
+            var accrued = 0.0
+            for (m in 1L..months) {
+                accrued += balance * monthlyRate
+                balance += monthly
+                if (m % capMonths == 0L) {
+                    balance += accrued
+                    accrued = 0.0
+                }
+            }
+            return balance
+        }
+
         /**
          * Без вклада: remaining / avgMonthly, округляем вверх до целого месяца.
          * С вкладом: помесячная симуляция — к балансу каждый месяц прибавляется
@@ -79,20 +101,13 @@ sealed class DeadlineForecast {
                 return Estimated(today.plusMonths(monthsNeeded), avgMonthly)
             }
 
-            val capitalizationMonths = bankDeposit.capitalizationMonths.coerceAtLeast(1)
-            val periodsPerYear = 12.0 / capitalizationMonths
-            val periodRate = (bankDeposit.interestRate / 100.0) / periodsPerYear
+            var months = 1L
+            while (months <= MAX_MONTHS &&
+                simulate(savedAmount, avgMonthly, bankDeposit, months) < targetAmount
+            ) months++
 
-            var balance = savedAmount
-            var monthsPassed = 0L
-            while (balance < targetAmount && monthsPassed < MAX_MONTHS) {
-                monthsPassed++
-                balance += avgMonthly
-                if (monthsPassed % capitalizationMonths == 0L) {
-                    balance += bankDeposit.initialAmount * periodRate
-                }
-            }
-            return Estimated(today.plusMonths(monthsPassed), avgMonthly)
+            if (months > MAX_MONTHS) return CannotEstimate
+            return Estimated(today.plusMonths(months), avgMonthly)
         }
 
         /**
@@ -114,22 +129,21 @@ sealed class DeadlineForecast {
             val daysLeft = ChronoUnit.DAYS.between(today, deadline)
             if (daysLeft <= 0) return RequiredDailyAmount.DeadlinePassed
 
-            val projectedInterest = bankDeposit?.let { deposit ->
-                val capitalizationMonths = deposit.capitalizationMonths.coerceAtLeast(1)
-                val monthsUntilDeadline = ChronoUnit.MONTHS.between(today, deadline)
-                val completedPeriods = monthsUntilDeadline / capitalizationMonths
-                if (completedPeriods <= 0) {
-                    0.0
-                } else {
-                    val periodsPerYear = 12.0 / capitalizationMonths
-                    val periodRate = (deposit.interestRate / 100.0) / periodsPerYear
-                    deposit.initialAmount * periodRate * completedPeriods
-                }
-            } ?: 0.0
+            if (bankDeposit == null) {
+                return RequiredDailyAmount.Required(remaining / daysLeft, daysLeft)
+            }
 
-            val remainingAfterInterest = (remaining - projectedInterest).coerceAtLeast(0.0)
-            val amountPerDay = remainingAfterInterest / daysLeft
+            val months = ChronoUnit.MONTHS.between(today, deadline).coerceAtLeast(1)
 
+            // Бинарный поиск минимального ежемесячного взноса, при котором баланс
+            // с процентами достигнет цели к дедлайну.
+            var lo = 0.0
+            var hi = remaining / months
+            repeat(50) {
+                val mid = (lo + hi) / 2
+                if (simulate(savedAmount, mid, bankDeposit, months) >= targetAmount) hi = mid else lo = mid
+            }
+            val amountPerDay = hi * months / daysLeft
             return RequiredDailyAmount.Required(amountPerDay = amountPerDay, daysLeft = daysLeft)
         }
     }

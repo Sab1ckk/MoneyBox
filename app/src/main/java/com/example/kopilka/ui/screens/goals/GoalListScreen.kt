@@ -56,6 +56,13 @@ import com.example.kopilka.viewmodel.GoalListUiState
 import com.example.kopilka.viewmodel.GoalListViewModel
 import com.example.kopilka.viewmodel.SortOption
 import com.example.kopilka.viewmodel.StatusFilter
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.example.kopilka.ui.theme.ColorError
 
 @Composable
 fun GoalListScreen(
@@ -72,7 +79,9 @@ fun GoalListScreen(
         onSearchQueryChange = viewModel::onSearchQueryChange,
         onStatusFilterChange = viewModel::onStatusFilterChange,
         onSortOptionChange = viewModel::onSortOptionChange,
-        onToggleSortMenu = viewModel::toggleSortMenu
+        onToggleSortMenu = viewModel::toggleSortMenu,
+        onToggleCategory = viewModel::onToggleCategory,
+        onClearCategories = viewModel::onClearCategories
     )
 }
 
@@ -84,8 +93,15 @@ private fun GoalListContent(
     onSearchQueryChange: (String) -> Unit,
     onStatusFilterChange: (StatusFilter) -> Unit,
     onSortOptionChange: (SortOption) -> Unit,
-    onToggleSortMenu: () -> Unit
+    onToggleSortMenu: () -> Unit,
+    onToggleCategory: (Int) -> Unit,
+    onClearCategories: () -> Unit
 ) {
+
+    var filtersOpen by remember { mutableStateOf(false) }
+    val activeFiltersCount = (if (state.statusFilter != StatusFilter.ALL) 1 else 0) +
+            state.selectedCategoryIds.size
+
     Scaffold(
         containerColor = ColorBase,
         floatingActionButton = {
@@ -142,11 +158,36 @@ private fun GoalListContent(
 
             Spacer(Modifier.height(12.dp))
 
-            // Кнопка сортировки + панель
+            // Кнопки: "Фильтры" слева, "Сортировка" справа
             Row(
-                horizontalArrangement = Arrangement.End,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
+                val hasActive = activeFiltersCount > 0
+                Text(
+                    text = buildString {
+                        append("Фильтры")
+                        if (hasActive) append(" · $activeFiltersCount")
+                        append(if (filtersOpen) "  ▴" else "  ▾")
+                    },
+                    color = if (hasActive || filtersOpen) ColorAccent else ColorText3,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(100.dp))
+                        .clickable { filtersOpen = !filtersOpen }
+                        .background(
+                            if (hasActive || filtersOpen) ColorAccentDim else ColorSurface,
+                            RoundedCornerShape(100.dp)
+                        )
+                        .border(
+                            1.dp,
+                            if (hasActive || filtersOpen) ColorBorderAccent else ColorBorder,
+                            RoundedCornerShape(100.dp)
+                        )
+                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                )
                 Text(
                     text = "Сортировка: ${state.sortOption.label}",
                     color = ColorAccent,
@@ -159,62 +200,124 @@ private fun GoalListContent(
                         .padding(horizontal = 12.dp, vertical = 6.dp)
                 )
             }
-            if (state.isSortMenuOpen) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp)
-                        .background(ColorCard, RoundedCornerShape(14.dp))
-                        .padding(6.dp)
-                ) {
-                    SortOption.entries.forEach { option ->
-                        val selected = option == state.sortOption
-                        Text(
-                            text = option.label,
-                            color = if (selected) ColorAccent else ColorText3,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier
-                                .weight(1f)
-                                .clip(RoundedCornerShape(10.dp))
-                                .clickable { onSortOptionChange(option) }
-                                .background(
-                                    if (selected) ColorAccentDim else Color.Transparent,
-                                    RoundedCornerShape(10.dp)
-                                )
-                                .padding(vertical = 8.dp),
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                        )
-                    }
-                }
-            }
 
             Spacer(Modifier.height(12.dp))
 
-            // Фильтры статуса
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                StatusFilter.entries.forEach { filter ->
-                    val selected = filter == state.statusFilter
-                    Text(
-                        text = filter.label,
-                        color = if (selected) ColorBase else ColorText3,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(100.dp))
-                            .clickable { onStatusFilterChange(filter) }
-                            .background(
-                                if (selected) ColorAccent else Color.Transparent,
-                                RoundedCornerShape(100.dp)
+            AnimatedVisibility(visible = filtersOpen) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 10.dp)
+                        .background(ColorCard, RoundedCornerShape(16.dp))
+                        .border(1.dp, ColorBorder, RoundedCornerShape(16.dp))
+                        .padding(14.dp)
+                ) {
+                    // Статус
+                    Text("СТАТУС", color = ColorText3, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        StatusFilter.entries.forEach { filter ->
+                            val selected = filter == state.statusFilter
+                            Text(
+                                text = filter.label,
+                                color = if (selected) ColorBase else ColorText3,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(100.dp))
+                                    .clickable { onStatusFilterChange(filter) }
+                                    .background(
+                                        if (selected) ColorAccent else Color.Transparent,
+                                        RoundedCornerShape(100.dp)
+                                    )
+                                    .border(
+                                        1.dp,
+                                        if (selected) ColorAccent else ColorBorder,
+                                        RoundedCornerShape(100.dp)
+                                    )
+                                    .padding(horizontal = 14.dp, vertical = 7.dp)
                             )
-                            .border(
-                                1.dp,
-                                if (selected) ColorAccent else ColorBorder,
-                                RoundedCornerShape(100.dp)
+                        }
+                    }
+
+                    // Категории
+                    if (state.categories.isNotEmpty()) {
+                        Spacer(Modifier.height(14.dp))
+                        Text("КАТЕГОРИИ", color = ColorText3, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.height(8.dp))
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.horizontalScroll(rememberScrollState())
+                        ) {
+                            val allSelected = state.selectedCategoryIds.isEmpty()
+                            Text(
+                                text = "Все",
+                                color = if (allSelected) ColorBase else ColorText3,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(100.dp))
+                                    .clickable { onClearCategories() }
+                                    .background(
+                                        if (allSelected) ColorAccent else Color.Transparent,
+                                        RoundedCornerShape(100.dp)
+                                    )
+                                    .border(
+                                        1.dp,
+                                        if (allSelected) ColorAccent else ColorBorder,
+                                        RoundedCornerShape(100.dp)
+                                    )
+                                    .padding(horizontal = 14.dp, vertical = 7.dp)
                             )
-                            .padding(horizontal = 16.dp, vertical = 7.dp)
-                    )
+                            state.categories.forEach { category ->
+                                val selected = category.id in state.selectedCategoryIds
+                                val color = CategoryPalette.colorForCategory(category)
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(100.dp))
+                                        .clickable { onToggleCategory(category.id) }
+                                        .background(
+                                            if (selected) color.copy(alpha = 0.12f) else Color.Transparent,
+                                            RoundedCornerShape(100.dp)
+                                        )
+                                        .border(
+                                            1.dp,
+                                            if (selected) color else ColorBorder,
+                                            RoundedCornerShape(100.dp)
+                                        )
+                                        .padding(horizontal = 12.dp, vertical = 7.dp)
+                                ) {
+                                    Text(category.icon.ifBlank { "●" }, fontSize = 13.sp)
+                                    Spacer(Modifier.width(6.dp))
+                                    Text(
+                                        text = category.name,
+                                        color = if (selected) color else ColorText3,
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    // Сброс всех фильтров
+                    if (activeFiltersCount > 0) {
+                        Spacer(Modifier.height(14.dp))
+                        Text(
+                            text = "Сбросить фильтры",
+                            color = ColorError,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable {
+                                    onStatusFilterChange(StatusFilter.ALL)
+                                    onClearCategories()
+                                }
+                                .padding(vertical = 4.dp)
+                        )
+                    }
                 }
             }
 
@@ -222,6 +325,14 @@ private fun GoalListContent(
 
             when {
                 state.isLoading -> Unit
+                state.items.isEmpty() && (state.searchQuery.isNotBlank() ||
+                        state.statusFilter != StatusFilter.ALL ||
+                        state.selectedCategoryIds.isNotEmpty()) -> Text(
+                    text = "Ничего не найдено. Измените фильтры или поиск",
+                    color = ColorText3,
+                    fontSize = 14.sp,
+                    modifier = Modifier.padding(top = 40.dp, start = 8.dp, end = 8.dp)
+                )
                 state.items.isEmpty() -> EmptyState(onCreate = onCreateGoal)
                 else -> LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -238,7 +349,7 @@ private fun GoalListContent(
 
 @Composable
 private fun GoalCard(item: GoalListItemUi, onClick: () -> Unit) {
-    val categoryColor = CategoryPalette.colorFor(item.categoryColorIndex)
+    val categoryColor = CategoryPalette.colorForCategory(item.category)
 
     Column(
         modifier = Modifier
@@ -412,3 +523,75 @@ private fun EmptyState(onCreate: () -> Unit) {
         )
     }
 }
+
+//@Preview(showBackground = true, backgroundColor = 0xFF0A0F0D)
+//@Composable
+//fun GoalListContentPreview() {
+//    val fakeItems = listOf(
+//        GoalListItemUi(
+//            id = 1,
+//            name = "Поездка в Японию",
+//            description = "Цветение сакуры — Токио, Киото",
+//            categoryColorIndex = 0,
+//            categoryIcon = "✈",
+//            hasBankDeposit = true,
+//            interestRate = 14.5,
+//            isCompleted = false,
+//            progressPercent = 36,
+//            savedAmount = 127500.0,
+//            targetAmount = 350000.0,
+//            daysLeft = 120,
+//            isDeadlineEstimated = false
+//        ),
+//        GoalListItemUi(
+//            id = 2,
+//            name = "MacBook Pro M4",
+//            description = "Для работы и монтажа видео",
+//            categoryColorIndex = 1,
+//            categoryIcon = "💻",
+//            hasBankDeposit = false,
+//            interestRate = null,
+//            isCompleted = true,
+//            progressPercent = 100,
+//            savedAmount = 250000.0,
+//            targetAmount = 250000.0,
+//            daysLeft = null,
+//            isDeadlineEstimated = false
+//        ),
+//        GoalListItemUi(
+//            id = 3,
+//            name = "Подушка безопасности",
+//            description = "Запас на 6 месяцев расходов",
+//            categoryColorIndex = 4,
+//            categoryIcon = "🛡",
+//            hasBankDeposit = true,
+//            interestRate = 16.0,
+//            isCompleted = false,
+//            progressPercent = 30,
+//            savedAmount = 180000.0,
+//            targetAmount = 600000.0,
+//            daysLeft = 15,
+//            isDeadlineEstimated = true
+//        )
+//    )
+//
+//    KopilkaTheme {
+//        GoalListContent(
+//            state = GoalListUiState(
+//                isLoading = false,
+//                searchQuery = "",
+//                statusFilter = StatusFilter.ALL,
+//                sortOption = SortOption.DEADLINE,
+//                isSortMenuOpen = false,
+//                items = fakeItems,
+//                totalSaved = fakeItems.sumOf { it.savedAmount }
+//            ),
+//            onGoalClick = {},
+//            onCreateGoal = {},
+//            onSearchQueryChange = {},
+//            onStatusFilterChange = {},
+//            onSortOptionChange = {},
+//            onToggleSortMenu = {}
+//        )
+//    }
+//}

@@ -1,5 +1,3 @@
-// Путь в проекте: app/src/main/java/com/example/kopilka/ui/screens/goals/GoalDetailsScreen.kt
-
 package com.example.kopilka.ui.screens.goals
 
 import androidx.compose.foundation.background
@@ -17,7 +15,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
@@ -52,7 +49,6 @@ import com.example.kopilka.data.entity.Deposit
 import com.example.kopilka.ui.theme.CategoryPalette
 import com.example.kopilka.ui.theme.ColorAccent
 import com.example.kopilka.ui.theme.ColorAccentDim
-import com.example.kopilka.ui.theme.ColorAccentGlow
 import com.example.kopilka.ui.theme.ColorBase
 import com.example.kopilka.ui.theme.ColorBorder
 import com.example.kopilka.ui.theme.ColorBorderAccent
@@ -327,7 +323,7 @@ private fun ForecastCard(state: GoalDetailsUiState) {
                     }
                     RequiredDailyAmount.AlreadyReached -> {
                         Text(
-                            "Цель уже накоплена 🎉",
+                            "Сумма уже накоплена 🎉",
                             color = ColorAccent,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.SemiBold
@@ -575,3 +571,5 @@ private fun AddFundsDialog(onAdd: (Double, String) -> Unit, onDismiss: () -> Uni
         }
     }
 }
+
+

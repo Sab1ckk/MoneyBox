@@ -2,6 +2,8 @@ package com.example.kopilka.ui.screens.goals
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -252,6 +254,7 @@ private fun CreateGoalContent(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(ColorAccent, RoundedCornerShape(16.dp))
+                        .clip(RoundedCornerShape(16.dp))
                         .clickable(enabled = !state.isSaving, onClick = onSave)
                         .padding(vertical = 16.dp),
                     contentAlignment = Alignment.Center
@@ -261,6 +264,26 @@ private fun CreateGoalContent(
                         color = ColorBase,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold
+                    )
+                }
+                Spacer(Modifier.height(12.dp))
+
+                // Кнопка "Отмена" — выход без сохранения
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(ColorSurface, RoundedCornerShape(16.dp))
+                        .border(1.dp, ColorBorder, RoundedCornerShape(16.dp))
+                        .clip(RoundedCornerShape(16.dp))
+                        .clickable(enabled = !state.isSaving, onClick = onBack)
+                        .padding(vertical = 16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Отмена",
+                        color = ColorText2,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold
                     )
                 }
                 Spacer(Modifier.height(32.dp))

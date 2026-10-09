@@ -15,8 +15,8 @@ import javax.inject.Singleton
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 
 private val Context.settingsDataStore by preferencesDataStore(name = "app_settings")
-
 enum class DefaultSortSetting { DEADLINE, PROGRESS, AMOUNT }
+enum class ThemeModeSetting { LIGHT, DARK, SYSTEM }
 
 /**
  * Настройки приложения (экран SettingsScreen): сортировка по умолчанию,
@@ -34,8 +34,8 @@ class SettingsDataStore @Inject constructor(
         val BIOMETRIC = booleanPreferencesKey("biometric_enabled")
         val DEFAULT_SORT = stringPreferencesKey("default_sort")
         val CURRENCY_SYMBOL = stringPreferencesKey("currency_symbol")
-
         val SENT_DEADLINE = stringSetPreferencesKey("sent_deadline_notifications")
+        val THEME_MODE = stringPreferencesKey("theme_mode")
     }
 
     val notificationsEnabled: Flow<Boolean> =
@@ -62,6 +62,11 @@ class SettingsDataStore @Inject constructor(
     val sentDeadlineNotifications: Flow<Set<String>> =
         context.settingsDataStore.data.map { it[Keys.SENT_DEADLINE] ?: emptySet() }
 
+    val themeMode: Flow<ThemeModeSetting> = context.settingsDataStore.data.map { prefs ->
+        val raw = prefs[Keys.THEME_MODE]
+        runCatching { ThemeModeSetting.valueOf(raw ?: ThemeModeSetting.DARK.name) }
+            .getOrDefault(ThemeModeSetting.DARK)
+    }
     suspend fun setNotificationsEnabled(value: Boolean) {
         context.settingsDataStore.edit { it[Keys.NOTIFICATIONS] = value }
     }
@@ -88,5 +93,9 @@ class SettingsDataStore @Inject constructor(
 
     suspend fun setSentDeadlineNotifications(value: Set<String>) {
         context.settingsDataStore.edit { it[Keys.SENT_DEADLINE] = value }
+    }
+
+    suspend fun setThemeMode(value: ThemeModeSetting) {
+        context.settingsDataStore.edit { it[Keys.THEME_MODE] = value.name }
     }
 }

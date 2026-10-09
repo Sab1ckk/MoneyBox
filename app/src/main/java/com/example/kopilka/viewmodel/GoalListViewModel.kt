@@ -1,5 +1,3 @@
-// Путь в проекте: app/src/main/java/com/example/kopilka/viewmodel/GoalListViewModel.kt
-
 package com.example.kopilka.viewmodel
 
 import androidx.lifecycle.ViewModel
@@ -24,6 +22,11 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import com.example.kopilka.data.datastore.DefaultSortSetting
+import com.example.kopilka.data.datastore.SettingsDataStore
+import kotlinx.coroutines.flow.first
+import com.example.kopilka.data.entity.Category
+import com.example.kopilka.data.repository.CategoryRepository
 
 enum class StatusFilter(val label: String) {
     ALL("Все"),
@@ -42,7 +45,8 @@ data class GoalListItemUi(
     val id: Int,
     val name: String,
     val description: String,
-    val categoryColorIndex: Int?,   // categories.firstOrNull()?.id — цвет по индексу, у Category нет своего цвета
+    /** основная (первая) категория цели — из неё берутся цвет и иконка*/
+    val category: Category?,
     val categoryIcon: String?,
     val hasBankDeposit: Boolean,
     val interestRate: Double?,
@@ -53,7 +57,8 @@ data class GoalListItemUi(
     /** null — дедлайн не задан и прогноз ещё нельзя построить (нет пополнений). */
     val daysLeft: Long?,
     /** true — пользователь задал дедлайн сам; false — дата рассчитана автоматически. */
-    val isDeadlineEstimated: Boolean
+    val isDeadlineEstimated: Boolean,
+    val categoryIds: Set<Int>,
 )
 
 data class GoalListUiState(
@@ -63,7 +68,9 @@ data class GoalListUiState(
     val sortOption: SortOption = SortOption.DEADLINE,
     val isSortMenuOpen: Boolean = false,
     val items: List<GoalListItemUi> = emptyList(),
-    val totalSaved: Double = 0.0
+    val totalSaved: Double = 0.0,
+    val categories: List<Category> = emptyList(),
+    val selectedCategoryIds: Set<Int> = emptySet(),
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -72,12 +79,21 @@ class GoalListViewModel @Inject constructor(
     private val goalRepository: GoalRepository,
     private val depositRepository: DepositRepository,
     private val goalCategoryRepository: GoalCategoryRepository,
-    private val bankDepositRepository: BankDepositRepository
+    private val bankDepositRepository: BankDepositRepository,
+    private val settingsDataStore: SettingsDataStore,
+    private val categoryRepository: CategoryRepository
 ) : ViewModel() {
 
     private val searchQuery = MutableStateFlow("")
     private val statusFilter = MutableStateFlow(StatusFilter.ALL)
+    private val selectedCategoryIds = MutableStateFlow<Set<Int>>(emptySet())
     private val sortOption = MutableStateFlow(SortOption.DEADLINE)
+
+    init {
+        viewModelScope.launch {
+            sortOption.value = settingsDataStore.defaultSort.first().toSortOption()
+        }
+    }
     private val isSortMenuOpen = MutableStateFlow(false)
 
     /**
@@ -106,7 +122,7 @@ class GoalListViewModel @Inject constructor(
                 id = goal.id,
                 name = goal.name,
                 description = goal.description,
-                categoryColorIndex = primaryCategory?.id,
+                category = primaryCategory,
                 categoryIcon = primaryCategory?.icon?.ifBlank { null },
                 hasBankDeposit = bankDeposit != null,
                 interestRate = bankDeposit?.interestRate,
@@ -115,6 +131,7 @@ class GoalListViewModel @Inject constructor(
                 savedAmount = saved,
                 targetAmount = goal.targetAmount,
                 daysLeft = effectiveDeadline?.let { daysUntil(it) },
+                categoryIds = categories.map { it.id }.toSet(),
                 isDeadlineEstimated = manualDeadline == null
             )
         }
@@ -128,23 +145,32 @@ class GoalListViewModel @Inject constructor(
             }
         }
 
+    private val filters = combine(searchQuery, statusFilter, selectedCategoryIds) { q, s, c ->
+        Triple(q, s, c)
+    }
+    private val sortState = combine(sortOption, isSortMenuOpen) { sort, menuOpen -> sort to menuOpen }
+
     val uiState: StateFlow<GoalListUiState> = combine(
-        allItems, searchQuery, statusFilter, sortOption, isSortMenuOpen
-    ) { items, query, status, sort, sortMenuOpen ->
+        allItems, filters, sortState, categoryRepository.getAllCategories()
+    ) { items, (query, status, selectedRaw), (sort, sortMenuOpen), categories ->
+        // Отбрасываем id категорий, которых уже нет (например, после очистки данных)
+        val selected = selectedRaw intersect categories.map { it.id }.toSet()
+
         val filtered = items.filter { item ->
             val matchesSearch = query.isBlank() ||
-                item.name.contains(query, ignoreCase = true) ||
-                item.description.contains(query, ignoreCase = true)
+                    item.name.contains(query, ignoreCase = true) ||
+                    item.description.contains(query, ignoreCase = true)
             val matchesStatus = when (status) {
                 StatusFilter.ALL -> true
                 StatusFilter.ACTIVE -> !item.isCompleted
                 StatusFilter.COMPLETED -> item.isCompleted
             }
-            matchesSearch && matchesStatus
+            // Пустой выбор = фильтр по категориям выключен
+            val matchesCategory = selected.isEmpty() || item.categoryIds.any { it in selected }
+            matchesSearch && matchesStatus && matchesCategory
         }
 
         val sorted = when (sort) {
-            // Цели без прогноза (daysLeft == null) уходят в конец списка.
             SortOption.DEADLINE -> filtered.sortedBy { it.daysLeft ?: Long.MAX_VALUE }
             SortOption.PROGRESS -> filtered.sortedByDescending { it.progressPercent }
             SortOption.AMOUNT -> filtered.sortedByDescending { it.targetAmount }
@@ -157,13 +183,25 @@ class GoalListViewModel @Inject constructor(
             sortOption = sort,
             isSortMenuOpen = sortMenuOpen,
             items = sorted,
-            totalSaved = items.sumOf { it.savedAmount }
+            totalSaved = items.sumOf { it.savedAmount },
+            categories = categories,
+            selectedCategoryIds = selected
         )
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = GoalListUiState()
     )
+
+    fun onToggleCategory(categoryId: Int) {
+        selectedCategoryIds.value = selectedCategoryIds.value.let {
+            if (categoryId in it) it - categoryId else it + categoryId
+        }
+    }
+
+    fun onClearCategories() {
+        selectedCategoryIds.value = emptySet()
+    }
 
     fun onSearchQueryChange(query: String) {
         searchQuery.value = query
@@ -186,4 +224,10 @@ class GoalListViewModel @Inject constructor(
     fun deleteGoal(goal: Goal) {
         viewModelScope.launch { goalRepository.delete(goal) }
     }
+}
+
+private fun DefaultSortSetting.toSortOption(): SortOption = when (this) {
+    DefaultSortSetting.DEADLINE -> SortOption.DEADLINE
+    DefaultSortSetting.PROGRESS -> SortOption.PROGRESS
+    DefaultSortSetting.AMOUNT -> SortOption.AMOUNT
 }
