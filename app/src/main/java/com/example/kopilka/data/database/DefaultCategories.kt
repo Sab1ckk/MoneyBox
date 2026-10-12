@@ -15,4 +15,7 @@ object DefaultCategories {
         Category(name = "Здоровье", icon = "❤", color = "#EC4899"),
         Category(name = "Другое", icon = "●", color = "#6B7280")
     )
+
+    /** true — категория из предустановленного набора (удалять её нельзя). */
+    fun isDefault(category: Category): Boolean = list.any { it.name == category.name }
 }

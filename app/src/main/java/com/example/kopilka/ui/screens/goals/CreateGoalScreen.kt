@@ -2,8 +2,9 @@ package com.example.kopilka.ui.screens.goals
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
+import androidx.compose.ui.window.Dialog
+import com.example.kopilka.data.database.DefaultCategories
+import com.example.kopilka.data.entity.Category
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -98,6 +99,7 @@ fun CreateGoalScreen(
         onDeadlineChange = viewModel::onDeadlineChange,
         onToggleCategory = viewModel::toggleCategory,
         onOpenAddCategory = viewModel::openAddCategoryDialog,
+        onRequestDeleteCategory = viewModel::requestDeleteCategory,
         onDepositToggle = viewModel::onDepositToggle,
         onInterestRateChange = viewModel::onInterestRateChange,
         onCapitalizationChange = viewModel::onCapitalizationChange,
@@ -117,6 +119,14 @@ fun CreateGoalScreen(
             onDismiss = viewModel::dismissAddCategoryDialog
         )
     }
+
+    state.categoryToDelete?.let { category ->
+        DeleteCategoryDialog(
+            categoryName = category.name,
+            onConfirm = viewModel::confirmDeleteCategory,
+            onDismiss = viewModel::dismissDeleteCategory
+        )
+    }
 }
 
 @Composable
@@ -129,6 +139,7 @@ private fun CreateGoalContent(
     onDeadlineChange: (LocalDate?) -> Unit,
     onToggleCategory: (Int) -> Unit,
     onOpenAddCategory: () -> Unit,
+    onRequestDeleteCategory: (Category) -> Unit,
     onDepositToggle: (Boolean) -> Unit,
     onInterestRateChange: (String) -> Unit,
     onCapitalizationChange: (Int) -> Unit,
@@ -236,7 +247,8 @@ private fun CreateGoalContent(
                     categories = state.allCategories,
                     selectedIds = state.selectedCategoryIds,
                     onToggle = onToggleCategory,
-                    onAddClick = onOpenAddCategory
+                    onAddClick = onOpenAddCategory,
+                    onDeleteClick = onRequestDeleteCategory
                 )
                 Spacer(Modifier.height(24.dp))
 
@@ -286,13 +298,19 @@ private fun CreateGoalContent(
                         fontWeight = FontWeight.SemiBold
                     )
                 }
-                Spacer(Modifier.height(32.dp))
+                Spacer(Modifier.height(16.dp))
+
+
+                if (state.snackbarMessage != null) {
+                    SnackbarError(
+                        message = state.snackbarMessage,
+                        onDismiss = onDismissSnackbar
+                    )
+                }
+
             }
         }
 
-        if (state.snackbarMessage != null) {
-            SnackbarError(message = state.snackbarMessage, onDismiss = onDismissSnackbar)
-        }
     }
 }
 
@@ -442,7 +460,8 @@ private fun CategoryChips(
     categories: List<com.example.kopilka.data.entity.Category>,
     selectedIds: Set<Int>,
     onToggle: (Int) -> Unit,
-    onAddClick: () -> Unit
+    onAddClick: () -> Unit,
+    onDeleteClick: (Category) -> Unit
 ) {
     androidx.compose.foundation.layout.FlowRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -475,6 +494,18 @@ private fun CategoryChips(
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold
                 )
+                if (!DefaultCategories.isDefault(category)) {
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = "×",
+                        color = ColorText3,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .clickable { onDeleteClick(category) }
+                    )
+                }
             }
         }
 
@@ -650,27 +681,71 @@ private fun DepositSection(
 
 @Composable
 private fun SnackbarError(message: String, onDismiss: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(20.dp),
-        contentAlignment = Alignment.BottomCenter
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
+    Dialog(onDismissRequest = onDismiss)
+    {
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(ColorErrorDim, RoundedCornerShape(14.dp))
-                .border(1.dp, ColorError.copy(alpha = 0.3f), RoundedCornerShape(14.dp))
-                .padding(horizontal = 16.dp, vertical = 14.dp)
+                .padding(20.dp),
+            contentAlignment = Alignment.BottomCenter
         ) {
-            Text(message, color = ColorText2, fontSize = 13.sp, modifier = Modifier.weight(1f))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(ColorErrorDim.copy(alpha = 0.4f), RoundedCornerShape(14.dp))
+                    .border(1.dp, ColorError.copy(alpha = 0.6f), RoundedCornerShape(14.dp))
+                    .padding(horizontal = 16.dp, vertical = 14.dp)
+            ) {
+                Text(message, color = ColorText2, fontSize = 13.sp, modifier = Modifier.weight(1f))
+                Text(
+                    "×",
+                    color = ColorText3,
+                    fontSize = 18.sp,
+                    modifier = Modifier.clickable(onClick = onDismiss)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun DeleteCategoryDialog(categoryName: String, onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    Dialog(onDismissRequest = onDismiss) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(ColorCard, RoundedCornerShape(20.dp))
+                .padding(20.dp)
+        ) {
             Text(
-                "×",
-                color = ColorText3,
-                fontSize = 18.sp,
-                modifier = Modifier.clickable(onClick = onDismiss)
+                "Удалить категорию «$categoryName»?",
+                color = ColorText,
+                fontSize = 17.sp,
+                fontWeight = FontWeight.Bold
             )
+            Text(
+                "Категория будет убрана у всех целей. Сами цели и пополнения останутся.",
+                color = ColorText3,
+                fontSize = 13.sp,
+                modifier = Modifier.padding(top = 8.dp, bottom = 20.dp)
+            )
+            Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    "Отмена",
+                    color = ColorText3,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.clickable(onClick = onDismiss).padding(12.dp)
+                )
+                Text(
+                    "Удалить",
+                    color = ColorError,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.clickable(onClick = onConfirm).padding(12.dp)
+                )
+            }
         }
     }
 }

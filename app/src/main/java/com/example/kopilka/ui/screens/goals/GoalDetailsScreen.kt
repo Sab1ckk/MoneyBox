@@ -370,7 +370,7 @@ private fun ForecastCard(state: GoalDetailsUiState) {
                 Spacer(Modifier.height(12.dp))
 
                 if (withDeposit != null) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         ForecastColumn(
                             label = "БЕЗ ВКЛАДА",
                             date = withoutDeposit.date,
@@ -403,14 +403,15 @@ private fun ForecastColumn(label: String, date: java.time.LocalDate, highlighted
         modifier = modifier
             .background(if (highlighted) ColorAccentDim else ColorSurface, RoundedCornerShape(14.dp))
             .border(1.dp, if (highlighted) ColorBorderAccent else ColorBorder, RoundedCornerShape(14.dp))
-            .padding(14.dp)
+            .padding(14.dp),
+        horizontalAlignment  = Alignment.CenterHorizontally
     ) {
         Text(label, color = if (highlighted) ColorAccent else ColorText3, fontSize = 11.sp, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(6.dp))
         Text(
             formatDate(date),
             color = if (highlighted) ColorAccent else ColorText2,
-            fontSize = 15.sp,
+            fontSize = 13.sp,
             fontWeight = FontWeight.Bold
         )
     }

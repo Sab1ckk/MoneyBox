@@ -99,6 +99,7 @@ private fun GoalListContent(
 ) {
 
     var filtersOpen by remember { mutableStateOf(false) }
+    var sortOpen by remember { mutableStateOf(false) }
     val activeFiltersCount = (if (state.statusFilter != StatusFilter.ALL) 1 else 0) +
             state.selectedCategoryIds.size
 
@@ -195,13 +196,49 @@ private fun GoalListContent(
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier
                         .clip(RoundedCornerShape(100.dp))
-                        .clickable { onToggleSortMenu() }
+                        .clickable {
+                            onToggleSortMenu()
+                        }
                         .background(ColorAccentDim, RoundedCornerShape(100.dp))
                         .padding(horizontal = 12.dp, vertical = 6.dp)
                 )
             }
 
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(6.dp))
+
+            AnimatedVisibility(visible = state.isSortMenuOpen){
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp)
+                            .background(ColorCard, RoundedCornerShape(14.dp))
+                            .padding(6.dp)
+                    ) {
+                        SortOption.entries.forEach { option ->
+                            val selected = option == state.sortOption
+                            Text(
+                                text = option.label,
+                                color = if (selected) ColorAccent else ColorText3,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable {
+                                        onSortOptionChange(option)
+                                    }
+                                    .background(
+                                        if (selected) ColorAccentDim else Color.Transparent,
+                                        RoundedCornerShape(10.dp)
+                                    )
+                                    .padding(vertical = 8.dp),
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            )
+                        }
+                    }
+            }
+
+            Spacer(Modifier.height(6.dp))
 
             AnimatedVisibility(visible = filtersOpen) {
                 Column(
@@ -321,7 +358,7 @@ private fun GoalListContent(
                 }
             }
 
-            Spacer(Modifier.height(14.dp))
+            Spacer(Modifier.height(12.dp))
 
             when {
                 state.isLoading -> Unit

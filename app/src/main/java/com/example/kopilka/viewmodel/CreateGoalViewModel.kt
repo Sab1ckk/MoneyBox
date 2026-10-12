@@ -11,6 +11,7 @@ import com.example.kopilka.data.repository.BankDepositRepository
 import com.example.kopilka.data.repository.CategoryRepository
 import com.example.kopilka.data.repository.GoalCategoryRepository
 import com.example.kopilka.data.repository.GoalRepository
+import com.example.kopilka.data.database.DefaultCategories
 import com.example.kopilka.ui.theme.CategoryPalette
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -50,7 +51,8 @@ data class CreateGoalUiState(
     val newCategoryName: String = "",
     val newCategoryColorHex: String = CategoryPalette.toHex(CategoryPalette.PRESET_COLORS.first()),
     val isSaving: Boolean = false,
-    val saveCompleted: Boolean = false
+    val saveCompleted: Boolean = false,
+    val categoryToDelete: Category? = null,
 )
 
 @HiltViewModel
@@ -188,6 +190,37 @@ class CreateGoalViewModel @Inject constructor(
         }
     }
 
+    // --- Удаление пользовательской категории ---
+
+    fun requestDeleteCategory(category: Category) {
+        if (DefaultCategories.isDefault(category)) return
+        _uiState.value = _uiState.value.copy(categoryToDelete = category)
+    }
+
+    fun dismissDeleteCategory() {
+        _uiState.value = _uiState.value.copy(categoryToDelete = null)
+    }
+
+    /** Связи goal_categories удаляются каскадно, сами цели остаются. */
+    fun confirmDeleteCategory() {
+        val category = _uiState.value.categoryToDelete ?: return
+        viewModelScope.launch {
+            try {
+                categoryRepository.delete(category)
+                val refreshed = categoryRepository.getAllCategories().first()
+                _uiState.value = _uiState.value.copy(
+                    allCategories = refreshed,
+                    selectedCategoryIds = _uiState.value.selectedCategoryIds - category.id,
+                    categoryToDelete = null
+                )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    categoryToDelete = null,
+                    snackbarMessage = "Не удалось удалить категорию"
+                )
+            }
+        }
+    }
     // --- Сохранение цели ---
 
     fun save() {

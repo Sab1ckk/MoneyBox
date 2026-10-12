@@ -3,6 +3,7 @@
 package com.example.kopilka.ui.screens.settings
 
 import android.content.pm.PackageManager
+import android.graphics.drawable.Icon
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateColorAsState
@@ -55,7 +56,10 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.ui.res.painterResource
+import com.example.kopilka.R
 import androidx.compose.ui.draw.scale
+import androidx.compose.material3.Icon
 
 @Composable
 fun SettingsScreen(
@@ -652,7 +656,10 @@ private fun AboutBlock() {
                 .border(1.dp, ColorBorderAccent, RoundedCornerShape(14.dp)),
             contentAlignment = Alignment.Center
         ) {
-            Text("💰", fontSize = 20.sp)
+            Icon(
+                painter = painterResource(id = R.drawable.ic_launcher_foreground),
+                contentDescription = "Иконка"
+            )
         }
         Spacer(Modifier.height(10.dp))
         Text("Копилка", color = ColorText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
