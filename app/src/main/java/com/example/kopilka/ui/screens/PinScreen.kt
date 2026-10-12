@@ -40,6 +40,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.activity.compose.LocalActivity
+import androidx.compose.material3.Icon
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -157,7 +158,10 @@ private fun PinScreenContent(
                     .border(1.dp, ColorBorderAccent, RoundedCornerShape(28.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                Text("💰", fontSize = 32.sp)
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_launcher_foreground),
+                    contentDescription = "Иконка"
+                )
             }
             Column(
                 modifier = Modifier.padding(top = 20.dp),
