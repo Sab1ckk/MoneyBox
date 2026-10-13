@@ -234,18 +234,21 @@ class CreateGoalViewModel @Inject constructor(
             name = if (state.name.isBlank()) "Название цели обязательно" else null,
             targetAmount = when {
                 targetAmountValue == null -> "Введите корректную сумму"
-                targetAmountValue <= 0 -> "Введите корректную сумму"
+                !targetAmountValue.isFinite() || targetAmountValue <= 0 -> "Введите корректную сумму"
+                targetAmountValue > 1000000000000 -> "Сумма не может быть слишком большой"
                 else -> null
             },
             // Дедлайн больше не обязателен — не задан, значит будет рассчитан автоматически.
             interestRate = if (!state.depositEnabled) null else when {
                 interestRateValue == null -> "Введите корректную ставку"
-                interestRateValue <= 0 -> "Введите корректную ставку"
+                !interestRateValue.isFinite() || interestRateValue <= 0 -> "Введите корректную ставку"
+                interestRateValue > 100 -> "Ставка не может быть больше 100%"
                 else -> null
             },
             initialAmount = if (!state.depositEnabled) null else when {
                 initialAmountValue == null -> "Введите корректную сумму"
-                initialAmountValue < 0 -> "Введите корректную сумму"
+                !initialAmountValue.isFinite() || initialAmountValue < 0 -> "Введите корректную сумму"
+                initialAmountValue > 10000000000 -> "Сумма не может быть слишком большой"
                 else -> null
             }
         )

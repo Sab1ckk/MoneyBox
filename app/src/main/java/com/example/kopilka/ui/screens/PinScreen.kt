@@ -1,5 +1,3 @@
-// Путь в проекте: app/src/main/java/com/example/kopilka/ui/screens/pin/PinScreen.kt
-
 package com.example.kopilka.ui.screens.pin
 
 import androidx.compose.foundation.Image

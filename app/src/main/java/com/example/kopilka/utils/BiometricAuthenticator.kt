@@ -1,12 +1,3 @@
-// Путь в проекте: app/src/main/java/com/example/kopilka/utils/BiometricAuthenticator.kt
-//
-// Требуемые зависимости (build.gradle.kts, модуль app):
-// implementation("androidx.biometric:biometric:1.1.0")
-// implementation("androidx.fragment:fragment-ktx:1.8.5")
-//
-// Разрешение USE_BIOMETRIC добавляется в манифест автоматически самой
-// библиотекой androidx.biometric (merge), объявлять его вручную не нужно.
-
 package com.example.kopilka.utils
 
 import android.content.Context
