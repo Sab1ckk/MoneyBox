@@ -372,13 +372,13 @@ private fun ForecastCard(state: GoalDetailsUiState) {
                 if (withDeposit != null) {
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         ForecastColumn(
-                            label = "БЕЗ ВКЛАДА",
+                            label = "БЕЗ ПРОЦЕНТОВ",
                             date = withoutDeposit.date,
                             highlighted = false,
                             modifier = Modifier.weight(1f)
                         )
                         ForecastColumn(
-                            label = "СО ВКЛАДОМ",
+                            label = "С ПРОЦЕНТАМИ",
                             date = withDeposit.date,
                             highlighted = true,
                             modifier = Modifier.weight(1f)

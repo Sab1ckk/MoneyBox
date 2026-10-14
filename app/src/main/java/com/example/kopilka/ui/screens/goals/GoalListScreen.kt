@@ -63,6 +63,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.example.kopilka.ui.theme.ColorError
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.foundation.lazy.LazyItemScope
 
 @Composable
 fun GoalListScreen(
@@ -99,9 +102,15 @@ private fun GoalListContent(
 ) {
 
     var filtersOpen by remember { mutableStateOf(false) }
-    var sortOpen by remember { mutableStateOf(false) }
     val activeFiltersCount = (if (state.statusFilter != StatusFilter.ALL) 1 else 0) +
             state.selectedCategoryIds.size
+    val listState = rememberLazyListState()
+
+    LaunchedEffect(state.sortOption, state.sortReversed) {
+        if (listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 0) {
+            listState.animateScrollToItem(0)
+        }
+    }
 
     Scaffold(
         containerColor = ColorBase,
@@ -190,8 +199,8 @@ private fun GoalListContent(
                         .padding(horizontal = 12.dp, vertical = 6.dp)
                 )
                 Text(
-                    text = "Сортировка: ${state.sortOption.label}",
-                    color = ColorAccent,
+                    text = "Сортировка: ${state.sortOption.label} ${if (state.sortReversed) "↑" else "↓"}",
+                    color = if (state.isSortMenuOpen) ColorAccent else ColorText3,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier
@@ -199,7 +208,13 @@ private fun GoalListContent(
                         .clickable {
                             onToggleSortMenu()
                         }
-                        .background(ColorAccentDim, RoundedCornerShape(100.dp))
+                        .background(if (state.isSortMenuOpen) ColorAccentDim else ColorSurface,
+                            RoundedCornerShape(100.dp))
+                        .border(
+                            1.dp,
+                            if (state.isSortMenuOpen) ColorBorderAccent else ColorBorder,
+                            RoundedCornerShape(100.dp)
+                        )
                         .padding(horizontal = 12.dp, vertical = 6.dp)
                 )
             }
@@ -218,12 +233,13 @@ private fun GoalListContent(
                         SortOption.entries.forEach { option ->
                             val selected = option == state.sortOption
                             Text(
-                                text = option.label,
+                                text = if (selected) "${option.label} ${if (state.sortReversed) "↑" else "↓"}" else option.label,
                                 color = if (selected) ColorAccent else ColorText3,
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 modifier = Modifier
                                     .weight(1f)
+                                    .clip(RoundedCornerShape(10.dp))
                                     .clickable {
                                         onSortOptionChange(option)
                                     }
@@ -372,11 +388,16 @@ private fun GoalListContent(
                 )
                 state.items.isEmpty() -> EmptyState(onCreate = onCreateGoal)
                 else -> LazyColumn(
+                    state = listState,
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     contentPadding = PaddingValues(bottom = 100.dp)
                 ) {
                     items(state.items, key = { it.id }) { item ->
-                        GoalCard(item = item, onClick = { onGoalClick(item.id) })
+                        GoalCard(
+                            item = item,
+                            onClick = { onGoalClick(item.id) },
+                            modifier = Modifier.animateItem()
+                        )
                     }
                 }
             }
@@ -385,7 +406,7 @@ private fun GoalListContent(
 }
 
 @Composable
-private fun GoalCard(item: GoalListItemUi, onClick: () -> Unit) {
+private fun GoalCard(item: GoalListItemUi, onClick: () -> Unit, modifier: Modifier) {
     val categoryColor = CategoryPalette.colorForCategory(item.category)
 
     Column(

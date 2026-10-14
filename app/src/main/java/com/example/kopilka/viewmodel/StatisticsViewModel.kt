@@ -7,9 +7,11 @@ import androidx.lifecycle.viewModelScope
 import com.example.kopilka.data.entity.Category
 import com.example.kopilka.data.entity.Deposit
 import com.example.kopilka.data.entity.Goal
+import com.example.kopilka.data.repository.BankDepositRepository
 import com.example.kopilka.data.repository.DepositRepository
 import com.example.kopilka.data.repository.GoalCategoryRepository
 import com.example.kopilka.data.repository.GoalRepository
+import com.example.kopilka.utils.DeadlineForecast.Companion.calcSavedAmount
 import com.example.kopilka.utils.calcProgressPercent
 import com.example.kopilka.utils.monthShortLabel
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -63,17 +65,19 @@ private data class GoalStatDetail(
 class StatisticsViewModel @Inject constructor(
     goalRepository: GoalRepository,
     private val depositRepository: DepositRepository,
-    private val goalCategoryRepository: GoalCategoryRepository
+    private val goalCategoryRepository: GoalCategoryRepository,
+    private val bankDepositRepository: BankDepositRepository
 ) : ViewModel() {
 
     private fun goalDetailFlow(goal: Goal): Flow<GoalStatDetail> =
         combine(
             depositRepository.getDepositsForGoal(goal.id),
-            goalCategoryRepository.getCategoriesForGoal(goal.id)
-        ) { deposits, categories ->
+            goalCategoryRepository.getCategoriesForGoal(goal.id),
+                    bankDepositRepository.getByGoalId(goal.id)
+        ) { deposits, categories, bankDeposit  ->
             GoalStatDetail(
                 goal = goal,
-                savedAmount = deposits.sumOf { it.amount },
+                savedAmount = calcSavedAmount(deposits, bankDeposit),
                 deposits = deposits,
                 primaryCategory = categories.firstOrNull()
             )

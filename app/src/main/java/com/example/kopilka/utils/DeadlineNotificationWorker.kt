@@ -10,8 +10,10 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.example.kopilka.MainActivity
 import com.example.kopilka.data.datastore.SettingsDataStore
+import com.example.kopilka.data.repository.BankDepositRepository
 import com.example.kopilka.data.repository.DepositRepository
 import com.example.kopilka.data.repository.GoalRepository
+import com.example.kopilka.utils.DeadlineForecast.Companion.calcSavedAmount
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
@@ -30,7 +32,9 @@ class DeadlineNotificationWorker(
     interface Deps {
         fun goalRepository(): GoalRepository
         fun depositRepository(): DepositRepository
+        fun bankDepositRepository(): BankDepositRepository
         fun settingsDataStore(): SettingsDataStore
+
     }
 
     @SuppressLint("MissingPermission")
@@ -43,9 +47,11 @@ class DeadlineNotificationWorker(
         if (!enabled || !manager.areNotificationsEnabled()) return Result.success()
 
         val goals = deps.goalRepository().getAllOnce()
-        val savedByGoal = deps.depositRepository().getAllOnce()
-            .groupBy { it.goalId }
-            .mapValues { (_, list) -> list.sumOf { it.amount } }
+        val depositsByGoal = deps.depositRepository().getAllOnce().groupBy { it.goalId }
+        val bankByGoal = deps.bankDepositRepository().getAllOnce().associateBy { it.goalId }
+        val savedByGoal = goals.associate { g ->
+            g.id to calcSavedAmount(depositsByGoal[g.id].orEmpty(), bankByGoal[g.id])
+        }
 
         // Чистим отметки для удалённых целей и изменённых дедлайнов
         val validPrefixes = goals.mapNotNull { g -> g.deadline?.let { "${g.id}:${it.toEpochDay()}:" } }
@@ -86,7 +92,7 @@ class DeadlineNotificationWorker(
             }
 
             val notification = NotificationCompat.Builder(applicationContext, NotificationScheduler.CHANNEL_ID)
-                .setSmallIcon(android.R.drawable.ic_popup_reminder) // TODO: своя иконка
+                .setSmallIcon(android.R.drawable.ic_popup_reminder)
                 .setContentTitle("Приближается дедлайн")
                 .setContentText(text)
                 .setStyle(NotificationCompat.BigTextStyle().bigText(text))

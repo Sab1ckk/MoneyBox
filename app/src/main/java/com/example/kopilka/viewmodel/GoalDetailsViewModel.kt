@@ -14,6 +14,7 @@ import com.example.kopilka.data.repository.DepositRepository
 import com.example.kopilka.data.repository.GoalCategoryRepository
 import com.example.kopilka.data.repository.GoalRepository
 import com.example.kopilka.utils.DeadlineForecast
+import com.example.kopilka.utils.DeadlineForecast.Companion.calcSavedAmount
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -79,7 +80,7 @@ class GoalDetailsViewModel @Inject constructor(
             return@combine GoalDetailsUiState(isLoading = false, goalNotFound = true)
         }
 
-        val saved = deposits.sumOf { it.amount }
+        val saved = calcSavedAmount(deposits, bankDeposit)
         val manualDeadline = goal.deadline
 
         // Прогноз без вклада считаем всегда — он же используется как итоговая

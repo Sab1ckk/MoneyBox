@@ -1,5 +1,3 @@
-// Путь в проекте: app/src/main/java/com/example/kopilka/utils/DeadlineForecast.kt
-
 package com.example.kopilka.utils
 
 import com.example.kopilka.data.entity.BankDeposit
@@ -7,6 +5,7 @@ import com.example.kopilka.data.entity.Deposit
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 import kotlin.math.ceil
+import kotlin.math.pow
 
 
 /**
@@ -56,32 +55,44 @@ sealed class DeadlineForecast {
             return total / monthsElapsed
         }
 
+        /**
+         * Баланс самого вклада через [monthsSinceStart] месяцев после даты открытия.
+         * Проценты начисляются ТОЛЬКО на сумму вклада (initialAmount), пополнения
+         * копилки в расчёте процентов не участвуют. Капитализация сложная: раз в
+         * capitalizationMonths месяцев начисленные проценты добавляются к телу вклада.
+         * Считаются только полностью завершённые периоды, отсчёт идёт от startDate.
+         */
+        private fun bankBalance(deposit: BankDeposit, monthsSinceStart: Long): Double {
+            val capMonths = deposit.capitalizationMonths.coerceAtLeast(1)
+            val periodRate = deposit.interestRate / 100.0 / 12.0 * capMonths
+            val completedPeriods = (monthsSinceStart.coerceAtLeast(0) / capMonths).toInt()
+            return deposit.initialAmount * (1 + periodRate).pow(completedPeriods)
+        }
+
+        /**
+         * Накоплено через [months] месяцев от сегодняшнего дня:
+         * пополнения (без процентов) + ежемесячный взнос * months + баланс вклада.
+         *
+         * savedAmount уже включает initialAmount (см. calcSavedAmount), поэтому
+         * часть "только пополнения" = savedAmount - initialAmount.
+         */
         private fun simulate(
-            saved: Double,
+            savedAmount: Double,
             monthly: Double,
             deposit: BankDeposit,
-            months: Long
+            months: Long,
+            today: LocalDate
         ): Double {
-            val capMonths = deposit.capitalizationMonths.coerceAtLeast(1)
-            val monthlyRate = deposit.interestRate / 100.0 / 12.0
-            var balance = saved
-            var accrued = 0.0
-            for (m in 1L..months) {
-                accrued += balance * monthlyRate
-                balance += monthly
-                if (m % capMonths == 0L) {
-                    balance += accrued
-                    accrued = 0.0
-                }
-            }
-            return balance
+            val contributions = savedAmount - deposit.initialAmount
+            val monthsSinceOpening = ChronoUnit.MONTHS.between(deposit.startDate, today) + months
+            return contributions + monthly * months + bankBalance(deposit, monthsSinceOpening)
         }
 
         /**
          * Без вклада: remaining / avgMonthly, округляем вверх до целого месяца.
          * С вкладом: помесячная симуляция — к балансу каждый месяц прибавляется
          * средний взнос, а на каждый период капитализации (capitalizationMonths) —
-         * проценты на стартовую сумму вклада (initialAmount), как и в исходном прототипе.
+         * проценты на стартовую сумму вклада (initialAmount).
          */
         fun estimate(
             savedAmount: Double,
@@ -103,7 +114,7 @@ sealed class DeadlineForecast {
 
             var months = 1L
             while (months <= MAX_MONTHS &&
-                simulate(savedAmount, avgMonthly, bankDeposit, months) < targetAmount
+                simulate(savedAmount, avgMonthly, bankDeposit, months, today) < targetAmount
             ) months++
 
             if (months > MAX_MONTHS) return CannotEstimate
@@ -113,7 +124,7 @@ sealed class DeadlineForecast {
         /**
          * Когда дедлайн задан ВРУЧНУЮ: сколько нужно откладывать каждый день,
          * чтобы успеть накопить цель к этому сроку. Если подключён банковский
-         * вклад — проценты, которые накапают на initialAmount к дедлайну,
+         * вклад — проценты, начисляются только на его сумму и к дедлайну,
          * уменьшают необходимую сумму пополнений.
          */
         fun requiredDailyAmount(
@@ -141,11 +152,14 @@ sealed class DeadlineForecast {
             var hi = remaining / months
             repeat(50) {
                 val mid = (lo + hi) / 2
-                if (simulate(savedAmount, mid, bankDeposit, months) >= targetAmount) hi = mid else lo = mid
+                if (simulate(savedAmount, mid, bankDeposit, months, today) >= targetAmount) hi = mid else lo = mid
             }
             val amountPerDay = hi * months / daysLeft
             return RequiredDailyAmount.Required(amountPerDay = amountPerDay, daysLeft = daysLeft)
         }
+
+        fun calcSavedAmount(deposits: List<Deposit>, bankDeposit: BankDeposit?): Double =
+            deposits.sumOf { it.amount } + (bankDeposit?.initialAmount ?: 0.0)
     }
 }
 
