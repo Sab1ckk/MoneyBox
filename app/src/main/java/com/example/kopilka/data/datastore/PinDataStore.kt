@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
@@ -30,6 +31,8 @@ class PinDataStore @Inject constructor(
         val PIN_HASH = stringPreferencesKey("pin_hash")
         val FAILED_ATTEMPTS = intPreferencesKey("failed_attempts")
         val LOCKED_UNTIL = longPreferencesKey("locked_until")
+
+        val PHRASE_HASH = stringPreferencesKey("phrase_hash")
     }
 
     /** true — PIN уже создан ранее, нужно показывать экран разблокировки. */
@@ -42,38 +45,53 @@ class PinDataStore @Inject constructor(
         prefs[Keys.LOCKED_UNTIL] ?: 0L
     }
 
-    suspend fun savePin(pin: String) {
+    suspend fun savePinWithPhrase(pin: String, phrase: String) {
         context.pinPrefsDataStore.edit { prefs ->
             prefs[Keys.PIN_HASH] = hash(pin)
+            prefs[Keys.PHRASE_HASH] = hash(normalizePhrase(phrase))
             prefs[Keys.FAILED_ATTEMPTS] = 0
             prefs[Keys.LOCKED_UNTIL] = 0L
         }
     }
 
-    /**
-     * Проверяет PIN. При ошибке увеличивает счётчик неверных попыток
-     * и, начиная с [LOCK_THRESHOLD] попыток, выставляет время блокировки.
-     */
     suspend fun verifyPin(pin: String): Boolean {
         var isValid = false
         context.pinPrefsDataStore.edit { prefs ->
             val storedHash = prefs[Keys.PIN_HASH]
             isValid = storedHash != null && storedHash == hash(pin)
-
-            if (isValid) {
-                prefs[Keys.FAILED_ATTEMPTS] = 0
-                prefs[Keys.LOCKED_UNTIL] = 0L
-            } else {
-                val attempts = (prefs[Keys.FAILED_ATTEMPTS] ?: 0) + 1
-                prefs[Keys.FAILED_ATTEMPTS] = attempts
-                if (attempts >= LOCK_THRESHOLD) {
-                    val cycles = ((attempts - LOCK_THRESHOLD) / LOCK_THRESHOLD) + 1
-                    prefs[Keys.LOCKED_UNTIL] = System.currentTimeMillis() + BASE_LOCK_MS * cycles
-                }
-            }
+            if (isValid) resetAttempts(prefs) else registerFailure(prefs)
         }
         return isValid
     }
+
+    /** Проверка контрольной фразы при восстановлении доступа. */
+    suspend fun verifyPhrase(phrase: String): Boolean {
+        var isValid = false
+        context.pinPrefsDataStore.edit { prefs ->
+            val stored = prefs[Keys.PHRASE_HASH]
+            isValid = stored != null && stored == hash(normalizePhrase(phrase))
+            if (isValid) resetAttempts(prefs) else registerFailure(prefs)
+        }
+        return isValid
+    }
+
+    private fun resetAttempts(prefs: MutablePreferences) {
+        prefs[Keys.FAILED_ATTEMPTS] = 0
+        prefs[Keys.LOCKED_UNTIL] = 0L
+    }
+
+    private fun registerFailure(prefs: MutablePreferences) {
+        val attempts = (prefs[Keys.FAILED_ATTEMPTS] ?: 0) + 1
+        prefs[Keys.FAILED_ATTEMPTS] = attempts
+        if (attempts >= LOCK_THRESHOLD) {
+            val cycles = ((attempts - LOCK_THRESHOLD) / LOCK_THRESHOLD) + 1
+            prefs[Keys.LOCKED_UNTIL] = System.currentTimeMillis() + BASE_LOCK_MS * cycles
+        }
+    }
+
+    /** Регистр и лишние пробелы не должны мешать вспомнить фразу. */
+    private fun normalizePhrase(phrase: String): String =
+        phrase.trim().lowercase().replace(Regex("\\s+"), " ")
 
     /** Используется, например, кнопкой «Забыли PIN? Сбросить». */
     suspend fun clearPin() {

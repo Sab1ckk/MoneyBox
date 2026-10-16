@@ -3,6 +3,7 @@ package com.example.kopilka.ui.screens.goals
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -65,6 +66,12 @@ import com.example.kopilka.utils.formatFullAmount
 import com.example.kopilka.viewmodel.GoalDetailsUiState
 import com.example.kopilka.viewmodel.GoalDetailsViewModel
 import com.example.kopilka.utils.RequiredDailyAmount
+import com.example.kopilka.ui.components.PayoutCalendarDialog
+import com.example.kopilka.ui.components.DepositInfoCard
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
+
 
 @Composable
 fun GoalDetailsScreen(
@@ -75,6 +82,7 @@ fun GoalDetailsScreen(
     val state by viewModel.uiState.collectAsState()
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showAddFundsSheet by remember { mutableStateOf(false) }
+    var showDepositDialog by remember { mutableStateOf(false) }
 
     if (state.isLoading) {
         Box(Modifier.fillMaxSize().background(ColorBase))
@@ -127,6 +135,7 @@ fun GoalDetailsScreen(
             ) {
                 val categoryColor = CategoryPalette.colorForCategory(state.categories.firstOrNull())
 
+
                 Text(goal.name, color = ColorText, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold)
                 if (goal.description.isNotBlank()) {
                     Text(
@@ -136,6 +145,21 @@ fun GoalDetailsScreen(
                         modifier = Modifier.padding(top = 4.dp)
                     )
                 }
+                state.bankDeposit?.let { deposit ->
+                    Text(
+                        text = "Вклад ${formatRate(deposit.interestRate)}% годовых",
+                        color = ColorAccent,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .padding(top = 10.dp)
+                            .clickable{ showDepositDialog = true }
+                            .background(ColorAccentDim, RoundedCornerShape(8.dp))
+                            .border(1.dp, ColorBorderAccent, RoundedCornerShape(8.dp))
+                            .padding(horizontal = 10.dp, vertical = 4.dp)
+                    )
+                }
+
                 Spacer(Modifier.height(20.dp))
 
                 ProgressCard(state = state, accentColor = categoryColor)
@@ -179,6 +203,13 @@ fun GoalDetailsScreen(
         AddFundsDialog(
             onAdd = { amount, comment -> viewModel.addFunds(amount, comment) },
             onDismiss = { showAddFundsSheet = false }
+        )
+    }
+
+    if (showDepositDialog) {
+        DepositInfoCard(
+            deposit = state.bankDeposit!!,
+            onDismiss = { showDepositDialog = false }
         )
     }
 }
@@ -273,6 +304,7 @@ private fun ProgressRing(progress: Float, color: Color) {
 @Composable
 private fun ForecastCard(state: GoalDetailsUiState) {
     val goal = state.goal ?: return
+    var showCalendar by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -369,8 +401,13 @@ private fun ForecastCard(state: GoalDetailsUiState) {
                 )
                 Spacer(Modifier.height(12.dp))
 
-                if (withDeposit != null) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                if (withDeposit != null && state.bankDeposit != null) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(14.dp))
+                            .clickable { showCalendar = true }
+                    ) {
                         ForecastColumn(
                             label = "БЕЗ ПРОЦЕНТОВ",
                             date = withoutDeposit.date,
@@ -384,7 +421,22 @@ private fun ForecastCard(state: GoalDetailsUiState) {
                             modifier = Modifier.weight(1f)
                         )
                     }
-                } else {
+                    Text(
+                        "Нажмите, чтобы открыть календарь выплат",
+                        color = ColorText3,
+                        fontSize = 11.sp,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+
+                    if (showCalendar) {
+                        PayoutCalendarDialog(
+                            deposit = state.bankDeposit,
+                            endDate = withDeposit.date,
+                            onDismiss = { showCalendar = false }
+                        )
+                    }
+                }
+                else {
                     Text(
                         text = formatDate(withoutDeposit.date),
                         color = ColorText,
@@ -498,11 +550,17 @@ private fun DeleteConfirmDialog(goalName: String, onConfirm: () -> Unit, onDismi
 private fun AddFundsDialog(onAdd: (Double, String) -> Unit, onDismiss: () -> Unit) {
     var amount by remember { mutableStateOf("") }
     var comment by remember { mutableStateOf("") }
+    val focusManager = LocalFocusManager.current
 
     androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .pointerInput(Unit) {
+                    detectTapGestures(onTap = {
+                        focusManager.clearFocus()
+                    })
+                }
                 .background(ColorCard, RoundedCornerShape(20.dp))
                 .padding(20.dp)
         ) {
@@ -573,4 +631,7 @@ private fun AddFundsDialog(onAdd: (Double, String) -> Unit, onDismiss: () -> Uni
     }
 }
 
+
+private fun formatRate(rate: Double): String =
+    if (rate % 1.0 == 0.0) rate.toInt().toString() else rate.toString()
 

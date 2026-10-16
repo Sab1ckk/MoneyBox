@@ -38,7 +38,7 @@ sealed class DeadlineForecast {
     companion object {
 
         private const val AVG_DAYS_PER_MONTH = 30.44 // календарный месяц в среднем
-        private const val MAX_MONTHS = 120L // ~10 лет — защита от бесконечного цикла симуляции
+        private const val MAX_MONTHS = 1200L // ~100 лет — защита от бесконечного цикла симуляции
 
         /**
          * Средняя сумма пополнений в месяц: сумма всех взносов, делённая на
@@ -109,6 +109,7 @@ sealed class DeadlineForecast {
 
             if (bankDeposit == null) {
                 val monthsNeeded = ceil(remaining / avgMonthly).toLong()
+                if (monthsNeeded > MAX_MONTHS) return CannotEstimate
                 return Estimated(today.plusMonths(monthsNeeded), avgMonthly)
             }
 
@@ -158,6 +159,28 @@ sealed class DeadlineForecast {
             return RequiredDailyAmount.Required(amountPerDay = amountPerDay, daysLeft = daysLeft)
         }
 
+        /**
+         * Календарь выплат по вкладу от startDate до endDate.
+         * Совпадает с моделью bankBalance: проценты за период = баланс * ставка/12 * capitalizationMonths,
+         * начисленное добавляется к телу вклада (сложный процент).
+         */
+        fun depositSchedule(deposit: BankDeposit, endDate: LocalDate): List<DepositPayout> {
+            val capMonths = deposit.capitalizationMonths.coerceAtLeast(1)
+            val periodRate = deposit.interestRate / 100.0 / 12.0 * capMonths
+            val result = mutableListOf<DepositPayout>()
+            var balance = deposit.initialAmount
+            var k = 1L
+            while (k <= MAX_MONTHS) {
+                val date = deposit.startDate.plusMonths(k * capMonths)
+                if (date.isAfter(endDate)) break
+                val accrued = balance * periodRate
+                balance += accrued
+                result += DepositPayout(date, accrued, balance)
+                k++
+            }
+            return result
+        }
+
         fun calcSavedAmount(deposits: List<Deposit>, bankDeposit: BankDeposit?): Double =
             deposits.sumOf { it.amount } + (bankDeposit?.initialAmount ?: 0.0)
     }
@@ -173,3 +196,6 @@ sealed class RequiredDailyAmount {
 
     data class Required(val amountPerDay: Double, val daysLeft: Long) : RequiredDailyAmount()
 }
+
+/** Строка календаря выплат: дата капитализации, начисленные проценты, баланс вклада после выплаты. */
+data class DepositPayout(val date: LocalDate, val accrued: Double, val balance: Double)

@@ -32,6 +32,7 @@ data class GoalDetailsUiState(
     val savedAmount: Double = 0.0,
     val categories: List<Category> = emptyList(),
     val bankDeposit: BankDeposit? = null,
+    //val interestRate: Double?,
     val contributions: List<Deposit> = emptyList(),
     /** true — пользователь сам задал дедлайн; false — дата ниже (если есть) рассчитана автоматически. */
     val hasManualDeadline: Boolean = false,
