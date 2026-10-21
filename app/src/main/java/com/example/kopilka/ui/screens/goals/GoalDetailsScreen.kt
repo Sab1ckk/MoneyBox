@@ -153,6 +153,7 @@ fun GoalDetailsScreen(
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier
                             .padding(top = 10.dp)
+                            .clip(RoundedCornerShape(8.dp))
                             .clickable{ showDepositDialog = true }
                             .background(ColorAccentDim, RoundedCornerShape(8.dp))
                             .border(1.dp, ColorBorderAccent, RoundedCornerShape(8.dp))

@@ -280,9 +280,9 @@ private fun PinScreenContent(
                 Text(
                     text = state.error ?: " ",
                     color = ColorError,
-                    fontSize = 13.sp,
+                    fontSize = 12.sp,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(top = 20.dp)
+                    modifier = Modifier.padding(top = 18.dp)
                 )
             }
 

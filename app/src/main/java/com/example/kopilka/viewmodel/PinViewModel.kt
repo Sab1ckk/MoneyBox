@@ -234,7 +234,7 @@ class PinViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(
                     isLockedOut = true,
                     lockRemainingSeconds = remainingSec,
-                    error = "Слишком много попыток. Повторите через ${remainingSec} с"
+                    error = "Слишком много попыток. Повторите через ${remainingSec}с"
                 )
                 delay(1000)
             }
