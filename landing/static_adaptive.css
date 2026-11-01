@@ -85,6 +85,7 @@ nav a:hover{
   font-style: normal;   
   font-family: "Onest", sans-serif;
   font-weight: bolder;
+  padding-left: 10px;
   font-size: 14pt;
 }
 
@@ -495,17 +496,10 @@ p {
     min-width: 0;
   }
 
-  .firstCard .phone {
-    ::before{
-      position: relative;
-    }
-  }
-
   .firstCard .phone img {
     height: auto;
     max-height: 480px;
     width: auto;
-    
   }
 
   .firstCard .info .actions {
@@ -609,6 +603,7 @@ p {
   .firstCard .phone {
     align-self: center;
     max-width: 75%;
+    
 
     ::before{
       position: relative;
@@ -621,6 +616,8 @@ p {
     max-height: 420px;
     margin: 0 auto;
     rotate: 0deg;
+    box-shadow: 0px 0px 50px 10px var(--accent-line);
+    
   }
 
   .firstCard .phone img:hover {
@@ -716,10 +713,6 @@ p {
 
   .firstCard .phone {
     max-width: 82%;
-
-    ::before{
-      position: relative;
-    }
   }
 
   .btn {
