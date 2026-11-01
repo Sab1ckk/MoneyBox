@@ -736,8 +736,6 @@ p {
 /* На устройствах без наведения отключаем hover-увеличение элементов */
 @media (hover: none) {
   .card:hover,
-  .btn-main:hover,
-  .btn-second:hover,
   .firstCard .phone img:hover {
     transform: none;
   }
