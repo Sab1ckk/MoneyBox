@@ -17,11 +17,6 @@ html{
   scroll-behavior: smooth;
 }
 
-body {
-  max-width: 100%;
-  overflow-x: clip;
-}
-
 #forecast, #download, #features{
   scroll-margin-top: 50px;
 }
@@ -500,10 +495,17 @@ p {
     min-width: 0;
   }
 
+  .firstCard .phone {
+    ::before{
+      position: relative;
+    }
+  }
+
   .firstCard .phone img {
     height: auto;
     max-height: 480px;
     width: auto;
+    
   }
 
   .firstCard .info .actions {
@@ -607,6 +609,10 @@ p {
   .firstCard .phone {
     align-self: center;
     max-width: 75%;
+
+    ::before{
+      position: relative;
+    }
   }
 
   .firstCard .phone img {
@@ -696,23 +702,6 @@ p {
     padding: 28px 16px 36px;
     font-size: 0.8rem;
   }
-
-  .firstCard,
-    .firstCard .info,
-    .firstCard .phone,
-    main,
-    section {
-      min-width: 0;
-      max-width: 100%;
-    }
-
-    .firstCard .phone {
-      width: 100%;
-    }
-
-    .firstCard .phone img {
-      max-width: 100%;
-    }
 }
 
 @media (max-width: 360px) {
@@ -727,6 +716,10 @@ p {
 
   .firstCard .phone {
     max-width: 82%;
+
+    ::before{
+      position: relative;
+    }
   }
 
   .btn {
