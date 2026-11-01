@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Onest:wght@100..900&display=swap" rel="stylesheet">
+    <link href="static_adaptive.css" rel="stylesheet">
+    <title>Копилка - копи и смотри</title>
+</head>
+<body class="content">
+<header>
+    <div class="wrap">
+        <div class="logo">
+            <a>
+            <img class="logo-img" src="kopilka_adaptive_icon_layers.png">
+            </a>
+            <a>Копилка</a>
+        </div>
+        <nav>
+            <a href="#features">Возможности</a>
+            <a href="#download">Скачать</a>
+        </nav>
+    </div>
+</header>
+    
+<main>
+    <div class="firstCard wrap">
+        
+        <div class="info">
+            <h1>Узнайте, когда накопите на свою цель</h1>
+            <p>Копилка считает дату достижения цели с учётом процентов по вкладу и подсказывает, сколько откладывать каждый день.</p>
+            <div class="actions">
+                <a class="btn btn-main" href="#download">Скачать для Android</a>
+                <a class="btn btn-second" href="#forecast">Попробовать расчет</a>
+            </div>
+        </div>
+        <div class="phone">
+            <div>
+                <img src="Goats.png">
+            </div>
+        </div>
+    </div>
+    
+    <section id="features">
+        <div class="wrap" >
+            <h2>Всё, что нужно для накоплений</h2>
+            <p>Максимально простое приложение - никакой регистрации и сбора данных: вся информация на вашем устройстве и всегда под рукой</p>
+            
+            <div class="crad-block">
+                <div class="card big">
+                <h3>Прогноз с учётом вклада</h3>
+                <p>
+                    Подключите банковский вклад — приложение покажет, 
+                    насколько быстрее вы дойдёте до цели благодаря капитализации процентов.
+                </p>
+            </div>
+                <div class="card">
+                    <div class="ico">
+                        <svg viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10"/>
+                            <circle cx="12" cy="12" r="6"/>
+                            <circle cx="12" cy="12" r="2"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3>Цели с категориями</h3>
+                        <p>Прогресс, дедлайн, поиск, фильтры и свои категории.</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="ico">
+                        <svg viewBox="0 0 24 24">
+                            <rect x="3" y="12" width="4" height="9" rx="1"/>
+                            <rect x="10" y="7" width="4" height="14" rx="1"/>
+                            <rect x="17" y="3" width="4" height="18" rx="1"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3>Статистика</h3>
+                        <p>Пополнения по месяцам и по категориям.</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="ico">
+                        <svg viewBox="0 0 24 24">
+                            <rect x="3" y="11" width="18" height="11" rx="2"/>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3>PIN и отпечаток</h3>
+                        <p>Данные защищены кодом и биометрией.</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="ico">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                            <path d="M13.7 21a2 2 0 0 1-3.4 0"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3>Напоминания</h3>
+                        <p>Уведомим за 30 и 10 дней до срока цели.</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="ico">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <path d="M7 10l5 5 5-5M12 15V3"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3>Резервная копия</h3>
+                        <p>Экспорт и импорт всех данных в один CSV-файл.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <section id="forecast">
+        <div class="wrap">
+            <div class="head">
+                <h2>Попробуйте расчёт сами</h2>
+                <p>Цель — 350 000 ₽, уже накоплено 127 500 ₽. Двигайте ползунки и смотрите, как вклад приближает дату.</p>
+            </div>
+            <div class="calc">
+                <div>
+                    <div class="ctl">
+                    <label for="monthly">Откладываю в месяц <output id="monthlyOut"></output></label>
+                    <input id="monthly" type="range" min="5000" max="50000" step="1000" value="15000">
+                    </div>
+                    <div class="ctl">
+                    <label for="rate">Ставка по вкладу <output id="rateOut"></output></label>
+                    <input id="rate" type="range" min="4" max="20" step="0.5" value="16">
+                    <p>Проценты капитализируются ежемесячно</p>
+                    </div>
+                </div>
+                <div class="res" aria-live="polite">
+                    <div class="win no-deposit">
+                        <span>Без вклада</span>
+                        <strong id="dateNo">—</strong>
+                        <em id="monNo"></em>
+                    </div>
+                    <div class="win deposit">
+                        <span>Со вкладом</span>
+                        <strong id="dateYes">—</strong>
+                        <em id="monYes"></em>
+                    </div>
+                    <p class="note" id="gain"></p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="download">
+        <div class="wrap">
+            <div class="load-card">
+                <div class="title">
+                    <h2>Начните копить сегодня</h2>
+                    <p>Бесплатно и без регистрации</p>
+                    <a href="https://github.com/Sab1ckk/Moneybox/releases/latest/download/app-release.apk" 
+                        class="btn btn-main">
+                        Скачать APK
+                    </a>
+                </div>
+                <div>
+                    <div class="qr-code">
+                        <img src="http://qrcoder.ru/code/?https%3A%2F%2Fgithub.com%2FSab1ckk%2FMoneybox%2Freleases%2Flatest%2Fdownload%2Fapp-release.apk&4&0" width="170">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<footer>
+    Kopilka - project was created by Sabick
+</footer>
+
+<script>
+(function(){
+  var TARGET=350000,SAVED=127500;
+  var $=function(id){return document.getElementById(id)};
+  var fmt=new Intl.NumberFormat('ru-RU');
+  function simulate(monthly,rate,months){
+    var r=rate/100/12,bal=SAVED,acc=0;
+    for(var m=1;m<=months;m++){acc+=bal*r;bal+=monthly;bal+=acc;acc=0}
+    return bal;
+  }
+  function when(m){
+    var d=new Date();d.setMonth(d.getMonth()+m);
+    return d.toLocaleDateString('ru-RU',{month:'long',year:'numeric'});
+  }
+  function plural(n){
+    var a=n%10,b=n%100;
+    if(a===1&&b!==11)return n+' месяц';
+    if(a>=2&&a<=4&&(b<10||b>=20))return n+' месяца';
+    return n+' месяцев';
+  }
+  function update(){
+    var monthly=+$('monthly').value,rate=+$('rate').value;
+    $('monthlyOut').textContent=fmt.format(monthly)+' ₽';
+    $('rateOut').textContent=String(rate).replace('.',',')+'%';
+    var no=Math.ceil((TARGET-SAVED)/monthly);
+    var yes=1;while(yes<240&&simulate(monthly,rate,yes)<TARGET)yes++;
+    $('dateNo').textContent=when(no);$('monNo').textContent='через '+plural(no);
+    $('dateYes').textContent=when(yes);$('monYes').textContent='через '+plural(yes);
+    var diff=no-yes;
+    $('gain').textContent=diff>0?'Вклад приближает цель на '+plural(diff)+'.':'При такой ставке вклад почти не меняет срок.';
+  }
+  $('monthly').addEventListener('input',update);
+  $('rate').addEventListener('input',update);
+  update();
+})();
+
+document.querySelectorAll('.calc .res .win').forEach(function(card){
+  card.addEventListener('mousemove', function(e){
+    var r = card.getBoundingClientRect();
+
+    var px = (e.clientX - r.left) / r.width  - 0.5;
+    var py = (e.clientY - r.top)  / r.height - 0.5;
+
+    var max = 14;
+    var rx = (-py * max).toFixed(2);  // наклон по X
+    var ry = ( px * max).toFixed(2);  // наклон по Y
+    card.style.transform =
+      'rotateX(' + rx + 'deg) rotateY(' + ry + 'deg) translateZ(20px)';
+  });
+  card.addEventListener('mouseleave', function(){
+    card.style.transform = '';
+  });
+});
+</script>
+</body>
+</html>
