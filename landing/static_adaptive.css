@@ -55,6 +55,10 @@ p{
 
 }
 
+header{
+  margin-top: 20px;
+}
+
 header .wrap{
   display: flex;
   justify-content: space-between;
