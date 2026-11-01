@@ -17,6 +17,11 @@ html{
   scroll-behavior: smooth;
 }
 
+body {
+  max-width: 100%;
+  overflow-x: clip;
+}
+
 #forecast, #download, #features{
   scroll-margin-top: 50px;
 }
@@ -691,6 +696,23 @@ p {
     padding: 28px 16px 36px;
     font-size: 0.8rem;
   }
+
+  .firstCard,
+    .firstCard .info,
+    .firstCard .phone,
+    main,
+    section {
+      min-width: 0;
+      max-width: 100%;
+    }
+
+    .firstCard .phone {
+      width: 100%;
+    }
+
+    .firstCard .phone img {
+      max-width: 100%;
+    }
 }
 
 @media (max-width: 360px) {
