@@ -535,9 +535,13 @@ p {
     min-width: 0;
   }
 
+  .logo a{
+    font-size: 0.9rem;
+  }
+
   .logo-img {
-    width: 42px;
-    height: 42px;
+    width: 40px;
+    height: 40px;
   }
 
   nav {
@@ -547,8 +551,8 @@ p {
   }
 
   nav a {
-    padding: 8px;
-    font-size: 0.9rem;
+    padding: 6px;
+    font-size: 0.8rem;
   }
 
   h1 {
