@@ -740,3 +740,13 @@ p {
     transform: none;
   }
 }
+
+a,
+button,
+input[type="button"],
+input[type="submit"] {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
